@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Guía de Implementación — Unnamed Multiplayer Racing Game</title>
+<style>
+  :root {
+    --bg: #0f1216;
+    --bg-soft: #171b21;
+    --bg-card: #1c2128;
+    --border: #2a313a;
+    --text: #d8dee6;
+    --text-dim: #9aa4b2;
+    --accent: #ff5a3c;
+    --accent2: #4ea1ff;
+    --green: #4caf7d;
+    --code-bg: #11151a;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+    font-size: 15px;
+  }
+  .layout { display: flex; min-height: 100vh; }
+
+  /* Sidebar */
+  nav.sidebar {
+    width: 290px;
+    flex-shrink: 0;
+    background: var(--bg-soft);
+    border-right: 1px solid var(--border);
+    padding: 24px 18px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    overflow-y: auto;
+  }
+  nav.sidebar h2 {
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: var(--text-dim);
+    margin: 0 0 12px;
+  }
+  nav.sidebar .brand {
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--text);
+    margin-bottom: 4px;
+    line-height: 1.3;
+  }
+  nav.sidebar .brand small { color: var(--accent); display:block; font-size: 12px; font-weight: 500; }
+  nav.sidebar ol { list-style: none; padding: 0; margin: 0 0 18px; counter-reset: item; }
+  nav.sidebar ol li { margin: 2px 0; }
+  nav.sidebar a {
+    color: var(--text-dim);
+    text-decoration: none;
+    display: block;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: background .15s, color .15s;
+  }
+  nav.sidebar a:hover { background: var(--bg-card); color: var(--text); }
+  nav.sidebar a.num::before {
+    counter-increment: item;
+    content: counter(item) ". ";
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  /* Main */
+  main { flex: 1; padding: 48px 56px; max-width: 980px; }
+  header.page-head {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 24px;
+    margin-bottom: 36px;
+  }
+  header.page-head h1 { margin: 0 0 8px; font-size: 30px; line-height: 1.2; }
+  header.page-head p { color: var(--text-dim); margin: 4px 0; }
+  .badges { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px; }
+  .badge {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 4px 11px;
+    border-radius: 20px;
+    font-size: 12.5px;
+  }
+  .badge.accent { border-color: var(--accent); color: var(--accent); }
+
+  section { margin-bottom: 46px; scroll-margin-top: 20px; }
+  section > h2 {
+    font-size: 23px;
+    border-left: 4px solid var(--accent);
+    padding-left: 14px;
+    margin: 0 0 18px;
+  }
+  h3 { font-size: 18px; margin: 26px 0 10px; color: #fff; }
+  h4 { font-size: 15px; margin: 18px 0 6px; color: var(--accent2); }
+  p { margin: 10px 0; }
+  ul { margin: 10px 0; padding-left: 22px; }
+  li { margin: 5px 0; }
+  strong { color: #fff; }
+
+  code {
+    font-family: var(--mono);
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 13px;
+    color: #e6c07b;
+  }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    margin: 14px 0;
+  }
+  pre code { background: none; border: none; padding: 0; color: #c7d0db; font-size: 13px; }
+
+  .card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin: 16px 0;
+  }
+  .card.key { border-left: 4px solid var(--accent2); }
+  .card.warn { border-left: 4px solid var(--accent); }
+
+  table { border-collapse: collapse; width: 100%; margin: 16px 0; font-size: 14px; }
+  th, td { border: 1px solid var(--border); padding: 9px 12px; text-align: left; vertical-align: top; }
+  th { background: var(--bg-soft); color: #fff; }
+  tr:nth-child(even) td { background: var(--bg-soft); }
+
+  .folders { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+  .folders div { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; font-size: 14px; }
+  .folders b { color: var(--accent2); font-family: var(--mono); }
+
+  a.inlink { color: var(--accent2); }
+  .tag { display:inline-block; background:var(--green); color:#06210f; font-size:11px; font-weight:700; padding:1px 7px; border-radius:4px; vertical-align:middle; }
+  footer { margin-top: 50px; padding-top: 20px; border-top: 1px solid var(--border); color: var(--text-dim); font-size: 13px; }
+  .back-top { position: fixed; bottom: 24px; right: 24px; background: var(--accent); color:#fff; border-radius: 50%; width:46px; height:46px; display:flex; align-items:center; justify-content:center; text-decoration:none; font-size:20px; box-shadow:0 4px 14px rgba(0,0,0,.4); }
+  @media (max-width: 860px) {
+    nav.sidebar { display: none; }
+    main { padding: 28px 20px; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <nav class="sidebar">
+    <div class="brand">Unnamed Multiplayer Racing Game<small>Guía de Implementación</small></div>
+    <h2>Contenidos</h2>
+    <ol>
+      <li><a class="num" href="#car">Sistema de Auto</a></li>
+      <li><a class="num" href="#powerups">PowerUps</a></li>
+      <li><a class="num" href="#race">Carrera y Red</a></li>
+      <li><a class="num" href="#lobby">Lobby y Menú</a></li>
+      <li><a class="num" href="#leaderboard">Leaderboard y Persistencia</a></li>
+      <li><a class="num" href="#ui">UI / HUD</a></li>
+      <li><a class="num" href="#soporte">Soporte / Utilidades</a></li>
+    </ol>
+    <h2>Referencia</h2>
+    <a href="#stack">Stack &amp; carpetas</a>
+    <a href="#patrones">Patrones transversales</a>
+    <a href="#pendientes">Pendientes / wiring</a>
+  </nav>
+
+  <main>
+    <header class="page-head" id="top">
+      <h1>Guía de Implementación</h1>
+      <p>Referencia de <strong>todo lo implementado</strong> y <strong>cómo se hizo</strong>. Pensada para responder "¿cómo se implementó X?".</p>
+      <p style="color:var(--text-dim)">Última actualización: 2026-06-17</p>
+      <div class="badges">
+        <span class="badge accent">Unity 2021.3.16f1</span>
+        <span class="badge">Photon PUN 2 + Chat</span>
+        <span class="badge">ParrelSync</span>
+        <span class="badge">Newtonsoft.Json</span>
+        <span class="badge">Arcade: sphere + container</span>
+      </div>
+    </header>
+
+    <!-- STACK -->
+    <section id="stack">
+      <h2>Stack &amp; mapa de carpetas</h2>
+      <ul>
+        <li><strong>Unity 2021.3.16f1</strong></li>
+        <li><strong>Photon PUN 2</strong> (multiplayer realtime) + Photon Chat</li>
+        <li><strong>ParrelSync</strong> (testing multi-instancia local)</li>
+        <li><strong>Newtonsoft.Json</strong> (leaderboard REST)</li>
+        <li>Física arcade: <strong>sphere-rigidbody + visual container</strong></li>
+        <li>Persistencia local: <strong>BinaryFormatter + XOR</strong> en <code>playerdata.bin</code></li>
+      </ul>
+      <h3>Carpetas (<code>Assets/Scripts/</code>)</h3>
+      <div class="folders">
+        <div><b>Car/</b> física, drift/boost, colisiones, visuales, audio, cámara, clash, skins</div>
+        <div><b>PowerUps/</b> database, inventario, efectos, cajas, EMP, pickup manager</div>
+        <div><b>Race/</b> RaceManager, Racer, Checkpoint</div>
+        <div><b>Network/</b> NetworkManager, Matchmaking, PlayerSpawner, Reconnection, GameBootstrap</div>
+        <div><b>Lobby/</b> LobbyHandler + subcategorías, Tracks</div>
+        <div><b>Main Menu/</b> MainMenuHandler, CarChooseButton</div>
+        <div><b>Leaderboard/</b> LeaderboardService, ScoreDto/Entry, XorCipher, Reporter</div>
+        <div><b>Save/</b> LocalSaveManager, PlayerProfile</div>
+        <div><b>Scenes/</b> GameSceneManager, TransitionManager</div>
+        <div><b>UI/</b> HUD panels, minimap, banners, overlays</div>
+        <div><b>Audio/</b> GameSFX (ScriptableObject)</div>
+        <div><b>Utility/ Debugging/ Environment/ Extensions/ Keys/</b></div>
+      </div>
+    </section>
+
+    <!-- 1. CAR -->
+    <section id="car">
+      <h2>1. Sistema de Auto <code>Car/</code></h2>
+
+      <h3>Arquitectura central: patrón sphere-container</h3>
+      <p>El auto separa <strong>física</strong> de <strong>visual</strong>:</p>
+      <ul>
+        <li><code>_sphere</code> — un <code>Rigidbody</code> esférico que recibe todas las fuerzas y colisiones reales.</li>
+        <li><code>_container</code> — Transform con la malla, ruedas y sensores. Se mantiene siempre <code>_containerOffset = 0.65f</code> debajo de la sphere (en <code>LateUpdate</code>).</li>
+      </ul>
+      <div class="card key">
+        <strong>Autoridad local vs remota</strong> (patrón usado en TODO el proyecto):
+        <pre><code>IsLocalAuthority =&gt; photonView == null || photonView.ViewID == 0 || photonView.IsMine;</code></pre>
+        Permite correr <strong>offline</strong> (sin Photon) y online con el mismo código.
+      </div>
+
+      <h3>CarController.cs — motor de física</h3>
+      <ul>
+        <li><code>FixedUpdate</code>: <code>CheckGround()</code> (raycast <code>_groundRayDistance=0.7</code>) → <code>HandleInput()</code> (<code>AddForce</code> forward con <code>_accelerationForce=35</code>) → <code>ApplySteering()</code> → <code>AlignToGround()</code> → <code>SyncPhysicsBodyRotation()</code> → <code>ApplyIdleDamping()</code> (<code>_idleVelocityDamping=8</code>) → <code>UpdateSpeed()</code>.</li>
+        <li>Estado expuesto: <code>Speed</code>, <code>LinearSpeed</code>, <code>Acceleration</code>, <code>SteerInput</code>, <code>IsDrifting</code> (lateral &gt; 4 m/s y grounded).</li>
+        <li><code>CanMove</code> controla <code>_sphere.isKinematic</code>.</li>
+        <li>Inyección remota: <code>SetRemoteState(linearSpeed, steerInput)</code>.</li>
+        <li>Drift hooks: <code>SetDriftHandling(steerMult, accelMult)</code>, <code>ApplyDriftVelocityDrag()</code>, <code>ResetDriftHandling()</code>.</li>
+      </ul>
+
+      <h3>CarNetworkSync.cs — replicación (IPunObservable)</h3>
+      <p>Serializa posición/velocidad de la sphere, rotación del container, <code>LinearSpeed</code>, <code>SteerInput</code> y estado de drift/boost. En remoto extrapola posición (<code>_netSpherePos + _netSphereVel * lag</code>, lag clampeado a <code>_maxExtrapolation=0.5s</code>) y hace lerp a <code>_positionLerpSpeed=15</code>. En <code>Awake</code>, si no es local: <code>CanMove=false</code> + <code>isKinematic=true</code>.</p>
+
+      <h3>CarDriftBoost.cs — drift y boost de 3 tiers</h3>
+      <ul>
+        <li>Tecla <code>LeftShift</code>. Carga si <code>velocidad ≥ 4</code>, <code>steer ≥ 0.15</code> y grounded.</li>
+        <li><code>_chargeTimeForMaxBoost=2.2s</code>. Umbrales de tier: <strong>0.32 / 0.66 / 0.95</strong>.</li>
+        <li>Al soltar Shift → <code>TryStartBoost()</code>. Duración por tier: <strong>0.45 / 0.8 / 1.15s</strong>. Aceleración por tier: <strong>25 / 38 / 52</strong>.</li>
+        <li>VFX de humo cambia color por tier: gris → azul → naranja → rojo.</li>
+      </ul>
+
+      <h3>Colisiones</h3>
+      <ul>
+        <li><strong>CarCollisionSide.cs</strong>: 4 BoxCollider trigger hijos (Front/Back/Left/Right). Infiere el lado por el nombre del GameObject; delega a <code>CarArcadeCollision.HandleSideTrigger</code>.</li>
+        <li><strong>CarArcadeCollision.cs</strong>: calcula impulso por <em>closing speed</em> (<code>_impulseStrength=7</code>, cap <code>_maxImpulse=12</code>) + spark + camera shake. Contiene los dos "ataques":
+          <ul>
+            <li><strong>Nitro Ram</strong>: sensor Front con turbo activo golpea el Back del rival → <code>RPC_RequestRamResolve</code> al <strong>MasterClient</strong>, que valida escudo y decide <code>RPC_RamDestroyed</code> o <code>RPC_ConsumeShield</code>.</li>
+            <li><strong>Drift Boost Clash</strong>: sensor lateral con boost activo golpea lateral del rival → <code>CarClashMinigame.TriggerClash</code>.</li>
+          </ul>
+        </li>
+        <li><strong>CarWallImpact.cs</strong>: <code>OnCollisionEnter</code> con paredes → shake + sparks (ignora autos).</li>
+        <li><strong>CarCollisionTuning.cs</strong>: ScriptableObject con parámetros de colisión.</li>
+      </ul>
+
+      <h3>CarRamDestroy.cs — destrucción y revive</h3>
+      <p>Coroutine <code>ReviveSequence</code>: explosión VFX → desactiva física/visual/colliders → muestra <code>ReviveUIPanel</code> (solo local) → countdown <code>_reviveTime=3</code> → teleport al último checkpoint (<code>GetRespawnPosition/Rotation</code>, proyecta forward al plano XZ) → grace period <code>_graceTime=3</code> con flickering e invencibilidad (<code>IsInvincible</code>).</p>
+
+      <h3>CarClashMinigame.cs — minijuego de choque</h3>
+      <p>Disparado por boost lateral vs lateral. <code>RPC_StartClash</code> en ambos: <code>IsInClash=true</code>, <code>CanMove=false</code>, muestra <code>ClashHUD</code>. Cada uno spamea <strong>SPACE</strong> (<code>+0.10</code> por tap). El MasterClient resuelve por mayor <code>Progress</code> o por timeout <code>_duration=3s</code>; el perdedor recibe <code>RPC_RamDestroyed</code> (o consume escudo). Los autos oscilan con un seno lateral durante el clash.</p>
+
+      <h3>Otros componentes</h3>
+      <ul>
+        <li><strong>CarVisuals.cs</strong>: rotación de ruedas, steering de delanteras (<code>_maxSteerAngle=30</code>), body lean y pitch.</li>
+        <li><strong>CarAudio.cs</strong>: pitch/volumen del motor por velocidad, screech por drift, impacto. Lee <code>GameSFX</code>.</li>
+        <li><strong>CarCamera.cs</strong>: follow con distancia dinámica (8→16), FOV dinámico (60→75), obstacle avoidance por SphereCast, tilt por steering, <code>Shake()</code> / <code>TurboFovPunch()</code>.</li>
+        <li><strong>CarNicknameLabel.cs</strong>: label TMP billboard con el <code>NickName</code> del owner (oculto en local).</li>
+      </ul>
+
+      <h3>Skins <code>Car/Skin/</code></h3>
+      <ul>
+        <li><strong>CarSkinSO</strong>: <code>skinID</code>, <code>SkinName</code>, <code>SkinMesh</code>, <code>SkinPreview</code>.</li>
+        <li><strong>CarSkinCatalogueSO</strong>: lista + diccionario por ID (<code>GetSkin</code>, <code>HasSkin</code>).</li>
+        <li><strong>CarSkinLoader</strong>: lee <code>LocalSaveManager.Profile.selectedSkin</code>, publica el ID en Photon player properties (<code>SKIN_PROP</code>) y manda <strong>RPC buffered</strong> <code>RPC_LoadSkin</code> (para late-joiners). <code>ChangeCurrentSkin()</code> cambia mesh en vivo y persiste.</li>
+      </ul>
+    </section>
+
+    <!-- 2. POWERUPS -->
+    <section id="powerups">
+      <h2>2. Sistema de PowerUps <code>PowerUps/</code></h2>
+
+      <h3>Tipos y database</h3>
+      <ul>
+        <li><strong>PowerUpType</strong>: <code>None, EMP, Shield, Turbo</code>.</li>
+        <li><strong>PowerUpDatabase</strong> (ScriptableObject): mapea tipo → icono + nombre (<code>GetIcon</code>, <code>GetDisplayName</code>).</li>
+      </ul>
+
+      <h3>Inventario</h3>
+      <ul>
+        <li><strong>PowerUpInventory</strong> (<code>MonoBehaviourPun</code>): guarda <strong>un</strong> powerup (<code>HasPowerUp</code> exclusivo). Tecla <code>E</code> → <code>TryUseCurrentPowerUp()</code> → delega a <code>PowerUpEffects</code>. Solo procesa input si <code>IsLocalAuthority</code>. Recibe vía <code>ReceivePowerUp()</code>.</li>
+        <li><strong>PowerUpInventoryHud / HUDItemPanel</strong>: muestran el powerup actual (encuentran el inventario local por <code>PhotonView.IsMine</code>).</li>
+      </ul>
+
+      <h3>PowerUpEffects.cs — corazón del sistema</h3>
+      <p>Cada efecto se aplica vía RPC <code>RpcTarget.All</code> (visuales en todos, física solo en autoridad):</p>
+      <ul>
+        <li><strong>EMP</strong>: <code>RPC_SpawnEmpProjectile</code> instancia el proyectil en todos. <code>PowerUpEmpProjectile</code> se mueve forward; <strong>solo el MasterClient detecta el impacto</strong> (anticheat). Al pegar: <code>ResolveEmpHit</code> → si target tiene escudo <code>RPC_ConsumeShield</code>, si no <code>RPC_ApplyEmp</code> (stun <code>_empStunDuration=1.25</code>, <code>CanMove=false</code>, daña velocidad, shake).</li>
+        <li><strong>Shield</strong>: <code>RPC_SetShield(true, 6s)</code> activa visual rotatorio + timestamp; coroutine lo apaga a los <code>_shieldDuration=6</code>.</li>
+        <li><strong>Turbo</strong>: <code>RPC_ActivateTurbo(1.1s, 45)</code> → partículas en todos; en la autoridad local agrega fuerza forward cada FixedUpdate, <code>IsTurboActive=true</code>, FOV punch + speed flash.</li>
+      </ul>
+
+      <h3>Cajas y pickup</h3>
+      <ul>
+        <li><strong>PowerUpBox</strong>: collider trigger con <code>_boxId</code> único, rota/flota/cicla color HSV. <code>OnTriggerEnter</code> marca <code>_available=false</code> y llama <code>RequestPickup</code>. Se registra en <code>OnEnable/OnDisable</code>.</li>
+        <li><strong>PowerUpBoxPlacer</strong>: herramienta de editor (ContextMenu) que genera grillas de cajas con IDs únicos.</li>
+        <li><strong>PowerUpPickupManager</strong> (Singleton, <code>IOnEventCallback</code>): arbitra pickups vía <strong>Photon Events</strong>:</li>
+      </ul>
+      <table>
+        <tr><th>Event</th><th>Código</th><th>Dirección</th><th>Acción</th></tr>
+        <tr><td>RequestPickup</td><td>41</td><td>cliente → MasterClient</td><td>bufferea 1 frame, elige ganador por menor <code>serverTimestamp</code> (<code>unchecked</code> wrap-around), tipo random de <code>_powerUpPool</code></td></tr>
+        <tr><td>ResolvePickup</td><td>42</td><td>MC → todos</td><td><code>ReceivePowerUp</code> al ganador</td></tr>
+        <tr><td>SetBoxAvailable</td><td>43</td><td>MC → todos</td><td>respawn tras <code>_respawnDelay=6s</code></td></tr>
+      </table>
+      <p>Modo offline: <code>GrantPickupLocal()</code>.</p>
+    </section>
+
+    <!-- 3. RACE -->
+    <section id="race">
+      <h2>3. Carrera y Red <code>Race/ Network/ Scenes/</code></h2>
+
+      <h3>RaceManager.cs (Singleton, IOnEventCallback) — orquestador</h3>
+      <ul>
+        <li>Config: <code>_totalLaps=3</code>, <code>_countdownDuration=3</code>, <code>_podiumTimeout=120</code>, array <code>_checkpoints[]</code> (el último es la meta). Estados: <code>Waiting/Countdown/Racing/Finished</code>.</li>
+        <li><strong>Reloj universal</strong> = <code>PhotonNetwork.Time</code>. <code>ExactStartTime</code> = momento del "GO!".</li>
+      </ul>
+      <table>
+        <tr><th>Evento Photon</th><th>Código</th><th>Para qué</th></tr>
+        <tr><td>EVENT_RACE_START</td><td>1</td><td>MC manda <code>startTime</code> a todos</td></tr>
+        <tr><td>EVENT_REPORT_FINISH</td><td>2</td><td>cliente reporta su finish al MC</td></tr>
+        <tr><td>EVENT_PODIUM</td><td>3</td><td>MC manda orden final a todos</td></tr>
+        <tr><td>EVENT_COUNTDOWN</td><td>4</td><td>HUD del timeout de podio</td></tr>
+      </table>
+
+      <h4>Arranque sincronizado</h4>
+      <p>Cuando todos los racers se registraron, el MC calcula <code>startTime = PhotonNetwork.Time + 3</code> y lo manda con <code>EVENT_RACE_START</code>. Todos corren <code>SyncedCountdown(startTime)</code> mirando el mismo reloj → salen exactamente juntos → <code>FireGo()</code>.</p>
+
+      <h4>Checkpoints y posiciones</h4>
+      <ul>
+        <li><code>NotifyCheckpoint</code> valida que sea el checkpoint <strong>siguiente</strong> en orden (anti-shortcut).</li>
+        <li>Posición = ordenar por <code>CurrentLap * nCheckpoints + LastCheckpoint</code> (desc), tiebreak <code>RaceTime</code> (asc).</li>
+      </ul>
+
+      <div class="card key">
+        <h4 style="margin-top:0">Modelo de finish: por-corredor, validado globalmente</h4>
+        <ul style="margin-bottom:0">
+          <li>Cada cliente reporta cuando <strong>su</strong> auto completa la última vuelta: <code>RPC_SetFinished</code> (congela el auto en todos) + <code>EVENT_REPORT_FINISH</code> al MC con su raceTime.</li>
+          <li>El MC acumula deduplicando por viewId. El primero dispara un timeout dinámico (<code>max(30, avgLap*1.5)</code>) y <code>EVENT_COUNTDOWN</code>. Cuando todos terminan o expira → <code>BroadcastPodium()</code> ordenando por <code>ServerTimestamp</code>.</li>
+          <li><code>EVENT_PODIUM</code> asigna posiciones finales (DNF a los que no llegaron), guarda en <code>LocalSaveManager</code> y dispara <code>OnRaceFinished(winner)</code>.</li>
+        </ul>
+      </div>
+
+      <p><strong>Eventos C# que consume el HUD</strong>: <code>OnCountdown</code>, <code>OnRaceStart</code>, <code>OnLapCompleted</code>, <code>OnPositionsUpdated</code>, <code>OnLocalRacerFinished</code>, <code>OnCountdownStarted</code>, <code>OnRaceFinished</code>.</p>
+
+      <h3>Racer.cs (MonoBehaviourPun)</h3>
+      <p>Estado por auto: <code>CurrentLap</code>, <code>LastCheckpoint</code>, <code>RaceTime</code> (acumula <code>Time.deltaTime</code> si <code>_racing</code>), <code>Position</code>, <code>FinishTime</code>, <code>IsFinished</code>, <code>PlayerName</code>. Se registra en <code>Start</code>. <code>RPC_SetFinished()</code> congela el rigidbody, desactiva colliders y sensores laterales.</p>
+
+      <h3>Checkpoint.cs</h3>
+      <p>Trigger box: en <code>OnTriggerEnter</code> busca el <code>Racer</code> en el parent y llama <code>RaceManager.NotifyCheckpoint</code>. Gizmos para visualizar respawn/orientación.</p>
+
+      <h3>Network/</h3>
+      <ul>
+        <li><strong>NetworkManager</strong> (PunSingleton): conexión. Estados <code>Offline/Connecting/Connected</code>. <code>RequestConnection()</code> con <code>AutomaticallySyncScene=true</code>.</li>
+        <li><strong>MatchmakingManager</strong> (PunSingleton): rooms. <code>MaxPlayers=4</code>, <code>MinPlayers=2</code>. <code>RequestCreateRoom(name, trackID)</code> guarda el track en <code>CustomProperties[Keys.MAP_PROP_KEY]</code>. <code>RequestJoinRoom</code> (vacío = random).</li>
+        <li><strong>PlayerSpawner</strong>: <code>PhotonNetwork.Instantiate("Car", spawnPoint)</code> (offline = <code>Resources.Load</code>). Spawn point por <code>ActorNumber</code>. Vincula la <code>CarCamera</code>.</li>
+        <li><strong>ReconnectionManager</strong> (Singleton): reintenta <code>ReconnectAndRejoin()</code> hasta 3 veces ante desconexiones inesperadas (<code>SuppressOfflineOnDisconnect</code> evita saltar al menú). Si falla, vuelve al menú.</li>
+        <li><strong>GameBootstrap</strong>: <span class="tag">SOLO TESTING</span> conecta y crea "TestRoom". Desactivar en build final.</li>
+      </ul>
+
+      <h3>Scenes/</h3>
+      <ul>
+        <li><strong>GameSceneManager</strong> (Singleton, DontDestroyOnLoad): observa <code>OnStatusChanged</code>; Connected → "Lobby", Offline → "Menu".</li>
+        <li><strong>TransitionManager</strong> (Singleton): cross-fade de 3s (fade-in → <code>LoadSceneAsync</code> → fade-out) sobre <code>CanvasGroup.alpha</code>.</li>
+      </ul>
+    </section>
+
+    <!-- 4. LOBBY -->
+    <section id="lobby">
+      <h2>4. Lobby y Menú <code>Lobby/ Main Menu/</code></h2>
+      <ul>
+        <li><strong>MainMenuHandler</strong>: input de nombre (límite 16; persiste en <code>LocalSaveManager</code> y <code>PhotonNetwork.NickName</code>), grilla de skins (<code>CarChooseButton</code> → <code>CarSkinLoader</code>), botón Play → <code>NetworkManager.RequestConnection()</code>. Nombre vacío genera <code>Player_####</code>.</li>
+        <li><strong>LobbyHandler</strong> (<code>ILobbyHandlerCommands</code>): orquesta pantallas (<code>_joinOrCreateScreen</code> vs <code>_inRoomScreen</code>) y subcategorías. <code>RequestStartGame()</code> (solo MasterClient) lee el trackID de las room properties y hace <code>PhotonNetwork.LoadLevel(TrackSceneName)</code>.</li>
+        <li><strong>CreateRoomHandler</strong>: input de nombre + grilla de <code>TrackChooseButton</code>; crea el room con el track elegido.</li>
+        <li><strong>JoinRoomHandler</strong>: se une al lobby, escucha <code>OnRoomListUpdate</code>, cachea rooms y recrea <code>RoomObject</code> por cada sala.</li>
+        <li><strong>RoomObject</strong>: muestra nombre, <code>[X/Y]</code>, mapa; botón JOIN/FULL según capacidad.</li>
+        <li><strong>InRoomHandler</strong>: info del room (nombre, mapa, mejor tiempo), lista de jugadores y habilita "Start" si es MasterClient con <code>≥ MinPlayers</code>.</li>
+        <li><strong>LobbyLeaderboardPanel</strong>: selección de track + top-N global (<code>LeaderboardService</code>) + récord personal (<code>LocalSaveManager</code>).</li>
+        <li><strong>TrackSO</strong>: <code>TrackID</code>, <code>TrackName</code>, <code>TrackSceneName</code>, <code>TrackImage</code>. <strong>TrackCatalogueSO</strong>: lista + diccionario por ID.</li>
+        <li><strong>Keys.MAP_PROP_KEY = "map"</strong>: clave de la room property que guarda el trackID.</li>
+      </ul>
+    </section>
+
+    <!-- 5. LEADERBOARD -->
+    <section id="leaderboard">
+      <h2>5. Leaderboard y Persistencia <code>Leaderboard/ Save/</code></h2>
+
+      <h3>LeaderboardService.cs — cliente REST (Singleton)</h3>
+      <ul>
+        <li>Config inspector: <code>_baseUrl</code> (<strong>si está vacía, todo es no-op silencioso</strong>), <code>_encryptPayload</code>, <code>_xorKey</code>. <code>IsReady =&gt; !_baseUrl.IsEmpty()</code>.</li>
+        <li><code>SubmitScore(name, time, position)</code>: arma un <code>ScoreDto</code> (escena actual como track + timestamp ISO) y hace <strong>POST</strong> (JSON via <code>JsonConvert</code>, opcionalmente ofuscado con <code>XorCipher</code>).</li>
+        <li><code>GetTopScores(n, cb)</code> / <code>GetTopScoresByTrack(track, n, cb)</code>: <strong>GET</strong>, parsea con <code>JToken</code> (acepta array JSON propio <strong>o</strong> objeto estilo Firebase RTDB), filtra por track, <strong>ordena ascendente por tiempo</strong> (menor = mejor), recorta a top-N.</li>
+        <li><strong>ScoreDto</strong> (name/time/position/track/timestamp) ↔ <strong>ScoreEntry</strong> (struct UI). <strong>XorCipher</strong>: <code>Encrypt</code>/<code>Decrypt</code> (XOR involutivo), anticheat básico.</li>
+        <li><strong>RaceResultReporter</strong>: se suscribe a <code>OnRaceFinished</code>, encuentra el racer local, toma su <code>FinishTime</code> y llama <code>SubmitScore</code> (flag <code>_reported</code> evita duplicados).</li>
+      </ul>
+
+      <h3>LocalSaveManager.cs — guardado local (Singleton)</h3>
+      <ul>
+        <li>Archivo: <code>Application.persistentDataPath/playerdata.bin</code>. <code>BinaryFormatter</code> + XOR byte-a-byte (<code>EncryptionKey</code> = "RacingKey").</li>
+        <li><code>OnRaceCompleted(trackId, time, position, totalPlayers)</code>: actualiza stats globales (<code>totalRaces/totalWins/totalPodiums</code>) y el <code>TrackRecord</code> (mejor tiempo/posición).</li>
+        <li><code>SaveNickname</code>, <code>SaveSkin</code>, <code>GetBestTime</code>, <code>GetBestPosition</code>.</li>
+        <li><strong>PlayerProfile</strong> [Serializable]: nickname, selectedSkin, stats globales y <code>Dictionary&lt;string, TrackRecord&gt;</code> (bestRaceTime, bestPosition, racesCompleted).</li>
+      </ul>
+    </section>
+
+    <!-- 6. UI -->
+    <section id="ui">
+      <h2>6. UI / HUD <code>UI/</code></h2>
+      <p>Todos los paneles encuentran al jugador local por <code>PhotonView.IsMine</code> y se suscriben a eventos del <code>RaceManager</code>:</p>
+      <ul>
+        <li><strong>HUDItemPanel</strong> (powerup actual), <strong>HUDLapPanel</strong> (<code>vuelta/total</code>), <strong>HUDPositionPanel</strong> (posición con sufijo ordinal), <strong>HUDCountdownDisplay</strong> (3/2/1/GO! con sonido de <code>GameSFX</code>), <strong>HUDFinishBanner</strong> (banner al cruzar meta), <strong>HUDLeaderboard</strong> (tabla final), <strong>HUDRaceCountdown</strong> (timer cuando otro termina).</li>
+        <li><strong>MinimapController</strong>: cámara ortográfica cenital auto-ajustada a los bounds del track; excluye la layer "MinimapIcon" del resto de cámaras. <strong>MinimapIcon</strong>: blanco si local, color por <code>ActorNumber</code> si remoto.</li>
+        <li><strong>ReviveUIPanel</strong> (countdown de revive), <strong>ClashHUD</strong> (barras del minijuego), <strong>SpeedEffectsOverlay</strong> (speed lines + vignette + turbo flash por velocidad).</li>
+        <li><strong>LeaderboardPanel / LeaderboardRow</strong>: tabla global vía REST con auto-refresh.</li>
+      </ul>
+    </section>
+
+    <!-- 7. SOPORTE -->
+    <section id="soporte">
+      <h2>7. Soporte / Utilidades</h2>
+      <ul>
+        <li><strong>GameSFX</strong> (ScriptableObject, Resources): base centralizada de SFX y parámetros de audio (countdown, combate, powerups, race, motor/screech/impacto).</li>
+        <li><strong>Singleton&lt;T&gt; / PunSingleton&lt;T&gt;</strong>: patrón singleton genérico.</li>
+        <li><strong>Timer</strong>: <code>CountdownTimer</code> y <code>StopwatchTimer</code> con eventos.</li>
+        <li><strong>FollowTransform / LookAtTransform</strong>: follow y look-at suaves.</li>
+        <li><strong>WeightedNode&lt;T&gt;</strong>: nodo con peso para comparaciones.</li>
+        <li><strong>Logger</strong> (estático, condicional editor/dev) y <strong>LoggerSO</strong> (logger con color/prefijo).</li>
+        <li><strong>ProceduralTerrain</strong>: mesh procedural con centro plano (pista) y montañas Perlin en los bordes; <code>[ExecuteInEditMode]</code>.</li>
+        <li><strong>Extensions</strong>: <code>CanvasGroup.ToggleVisibility</code>, <code>SpriteRenderer.ChangeSprite</code>, <code>string.IsEmpty</code>, <code>Vector3.NoY</code>.</li>
+      </ul>
+    </section>
+
+    <!-- PATRONES -->
+    <section id="patrones">
+      <h2>Patrones transversales (claves para entender el código)</h2>
+      <div class="card">
+        <ol style="margin:0; padding-left:20px">
+          <li><strong><code>IsLocalAuthority</code></strong> en todos lados → mismo código offline y online.</li>
+          <li><strong>MasterClient como árbitro</strong> de lo crítico: ram destroy, clash, EMP hit, pickups y orden del podio. Los clientes no manipulan resultados.</li>
+          <li><strong><code>PhotonNetwork.Time</code></strong> como reloj común para countdown y tiempos de carrera.</li>
+          <li><strong>RPC <code>RpcTarget.All</code></strong> para visuales; <strong>Photon Events</strong> (codes 41-43, 1-4) para arbitraje request→resolve.</li>
+          <li><strong><code>unchecked</code> en timestamps</strong> para wrap-around de <code>ServerTimestamp</code> (int).</li>
+          <li><strong>Sphere-container</strong> separa física de visual; remotos van kinematic + interpolación.</li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- PENDIENTES -->
+    <section id="pendientes">
+      <h2>Pendientes / notas de wiring (Unity Editor)</h2>
+      <div class="card warn">
+        <ul style="margin:0">
+          <li><code>LeaderboardService._baseUrl</code> debe apuntar al backend REST (si vacío, no sube tiempos).</li>
+          <li><code>GameBootstrap</code> es solo para testing — desactivar en build final.</li>
+          <li>Prefab del auto en <code>Resources/</code> (nombre por defecto "Car").</li>
+          <li>Validar siempre con <strong>ParrelSync</strong> (2 instancias): ganador y perdedor deben registrar su tiempo de forma independiente.</li>
+        </ul>
+      </div>
+    </section>
+
+    <footer>
+      Unnamed Multiplayer Racing Game — Guía generada desde el código fuente (<code>Assets/Scripts/</code>).
+      Equivalente HTML de <code>production/GUIA-IMPLEMENTACION.md</code>.
+    </footer>
+  </main>
+</div>
+<a href="#top" class="back-top" title="Volver arriba">↑</a>
+</body>
+</html>

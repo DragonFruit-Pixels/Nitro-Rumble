@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bd62c67a0f6658d4984a9be9aa64050e, type: 3}
+  m_Name: GameSFX
+  m_EditorClassIdentifier: 
+  countdownBeep:
+    clip: {fileID: 8300000, guid: 5d541663d811ed341aedfd845fd4a4e5, type: 3}
+    volume: 0.8
+  countdownGo:
+    clip: {fileID: 8300000, guid: 632bc83aeaa4ada4bad8a83a1dacb068, type: 3}
+    volume: 0.9
+  carExplosion:
+    clip: {fileID: 8300000, guid: 7c649c57f67aa854dbbddfea9318a6ef, type: 3}
+    volume: 1
+  carImpact:
+    clip: {fileID: 8300000, guid: 801173f6a0f1c094e98e2ded52f63a51, type: 3}
+    volume: 0.8
+  wallSparks:
+    clip: {fileID: 8300000, guid: 8250eaf3b82ffc447b4bb5a4e951b013, type: 3}
+    volume: 0.6
+  turboActivate:
+    clip: {fileID: 8300000, guid: c9d1df18b2b5f534ca8e858c0484301f, type: 3}
+    volume: 1
+  empFire:
+    clip: {fileID: 8300000, guid: 6c9903ba1791e734ebd162f88b0f1edd, type: 3}
+    volume: 1
+  empHit:
+    clip: {fileID: 8300000, guid: 358ce9a175b3d814897c6271a2b5484e, type: 3}
+    volume: 0.85
+  shieldActivate:
+    clip: {fileID: 8300000, guid: 8d0a805828eeefc46adb81e54e76f760, type: 3}
+    volume: 0.7
+  shieldBlock:
+    clip: {fileID: 8300000, guid: 5cfe4335c0a94d3488984d327b172cc1, type: 3}
+    volume: 0.8
+  checkpointPass:
+    clip: {fileID: 8300000, guid: ff66e3cc91a9db740a6bd701d8293d39, type: 3}
+    volume: 0.75
+  lapComplete:
+    clip: {fileID: 8300000, guid: 257738876a6057441bd1abd02fdfdcba, type: 3}
+    volume: 0.85
+  raceFinish:
+    clip: {fileID: 8300000, guid: d44972e9c1ccbec4abc945dea94b86d0, type: 3}
+    volume: 0.9
+  engine:
+    minPitch: 0.5
+    maxPitch: 3
+    minVolume: 0.021
+    maxVolume: 0.095
+  screech:
+    driftThreshold: 0.938
+  impact:
+    minSpeed: 1
+    maxSpeed: 6
