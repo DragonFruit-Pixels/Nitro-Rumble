@@ -152,7 +152,7 @@ public class RaceManager : Singleton<RaceManager>, IOnEventCallback, IInRoomCall
                 break;
             }
             case EVENT_REPORT_FINISH:
-                HandleFinishReport((object[])photonEvent.CustomData);
+                HandleFinishReport((RaceResultPackage)photonEvent.CustomData);
                 break;
             case EVENT_PODIUM:
                 HandlePodiumEvent((object[])photonEvent.CustomData);
@@ -277,10 +277,17 @@ public class RaceManager : Singleton<RaceManager>, IOnEventCallback, IInRoomCall
             // TiempoFinal = PhotonNetwork.Time - exactStartTime (reloj universal, sin depender de FPS)
             double raceTime = PhotonNetwork.Time - ExactStartTime;
 
-            object[] payload = { racer.photonView.ViewID, PhotonNetwork.ServerTimestamp, raceTime };
+            // Tipo custom registrado (PhotonCustomTypes): viaja serializado por nuestros propios
+            // métodos en lugar de un object[] sin tipo.
+            var result = new RaceResultPackage(
+                racer.photonView.ViewID,
+                racer.PlayerName,
+                (float)raceTime,
+                PhotonNetwork.ServerTimestamp
+            );
             PhotonNetwork.RaiseEvent(
                 EVENT_REPORT_FINISH,
-                payload,
+                result,
                 new RaiseEventOptions { Receivers = ReceiverGroup.MasterClient },
                 SendOptions.SendReliable
             );
@@ -302,13 +309,13 @@ public class RaceManager : Singleton<RaceManager>, IOnEventCallback, IInRoomCall
     #region Podio — Master Client
 
     // Solo el MC procesa este evento. Acumula finishes y emite el podio cuando todos terminaron.
-    private void HandleFinishReport(object[] payload)
+    private void HandleFinishReport(RaceResultPackage result)
     {
         if (!PhotonNetwork.IsMasterClient) return;
 
-        int    racerViewId     = (int)payload[0];
-        int    serverTimestamp = (int)payload[1];
-        double raceTime        = (double)payload[2];
+        int    racerViewId     = result.RacerViewId;
+        int    serverTimestamp = result.ServerTimestamp;
+        double raceTime        = result.RaceTime;
 
         // Deduplicar (Photon SendReliable puede reintentar en caso de pérdida de paquete)
         foreach (var record in _finishRecords)

@@ -6,10 +6,11 @@ using UnityEngine;
 public class CarNetworkSync : MonoBehaviourPun, IPunObservable
 {
     [Header("References")]
-    [SerializeField] private CarController _controller;
-    [SerializeField] private CarDriftBoost _driftBoost;
-    [SerializeField] private Rigidbody     _sphere;
-    [SerializeField] private Transform     _container;
+    [SerializeField] private CarController   _controller;
+    [SerializeField] private CarDriftBoost   _driftBoost;
+    [SerializeField] private CarStretchSquash _stretchSquash;
+    [SerializeField] private Rigidbody       _sphere;
+    [SerializeField] private Transform       _container;
 
     [Header("Interpolation")]
     [SerializeField] private float _positionLerpSpeed  = 15f;
@@ -29,6 +30,7 @@ public class CarNetworkSync : MonoBehaviourPun, IPunObservable
     private int   _netDriftLevel;
     private bool  _netIsBoosting;
     private int   _netBoostLevel;
+    private float _netSquash;
 
     // Valores previos enviados — usados para detectar cambios (delta sync)
     private bool  _prevIsDrifting;
@@ -36,6 +38,7 @@ public class CarNetworkSync : MonoBehaviourPun, IPunObservable
     private int   _prevDriftLevel;
     private bool  _prevIsBoosting;
     private int   _prevBoostLevel;
+    private float _prevSquash;
 
     // Máscaras de bits para el dirty flag de estados discretos (byte = 8 bits, 3 libres para futuras variables)
     private const byte DIRTY_DRIFTING     = 1 << 0;
@@ -43,6 +46,10 @@ public class CarNetworkSync : MonoBehaviourPun, IPunObservable
     private const byte DIRTY_DRIFT_LEVEL  = 1 << 2;
     private const byte DIRTY_BOOST_LEVEL  = 1 << 3;
     private const byte DIRTY_DRIFT_CHARGE = 1 << 4;
+    private const byte DIRTY_SQUASH       = 1 << 5;
+
+    // Umbral de cambio del squash para marcar dirty (cuantizado a ~1/255, evita enviar cada frame).
+    private const float SQUASH_THRESHOLD = 0.04f;
 
     private double _lastReceiveTime;
 
@@ -59,6 +66,7 @@ public class CarNetworkSync : MonoBehaviourPun, IPunObservable
         }
 
         ResolveDriftBoost();
+        if (_stretchSquash == null) _stretchSquash = GetComponent<CarStretchSquash>();
 
         if (IsLocal) return;
 
@@ -100,6 +108,10 @@ public class CarNetworkSync : MonoBehaviourPun, IPunObservable
                 _netBoostLevel
             );
         }
+
+        // Stretch & squash recibido por red (el remoto no lo calcula, lo aplica).
+        if (_stretchSquash != null)
+            _stretchSquash.SetRemoteSquash(_netSquash);
     }
 
     public void OnPhotonSerializeView(PhotonStream stream, PhotonMessageInfo info)
@@ -121,6 +133,7 @@ public class CarNetworkSync : MonoBehaviourPun, IPunObservable
             int   driftLevel  = _driftBoost != null ? _driftBoost.DriftLevel   : 0;
             int   boostLevel  = _driftBoost != null ? _driftBoost.BoostLevel   : 0;
             float driftCharge = _driftBoost != null ? _driftBoost.DriftCharge01 : 0f;
+            float squash      = _stretchSquash != null ? _stretchSquash.CurrentSquash : 0f;
 
             byte dirty = 0;
             if (isDrifting  != _prevIsDrifting)                         dirty |= DIRTY_DRIFTING;
@@ -128,6 +141,7 @@ public class CarNetworkSync : MonoBehaviourPun, IPunObservable
             if (driftLevel  != _prevDriftLevel)                         dirty |= DIRTY_DRIFT_LEVEL;
             if (boostLevel  != _prevBoostLevel)                         dirty |= DIRTY_BOOST_LEVEL;
             if (Mathf.Abs(driftCharge - _prevDriftCharge) > 0.01f)     dirty |= DIRTY_DRIFT_CHARGE;
+            if (Mathf.Abs(squash - _prevSquash) > SQUASH_THRESHOLD)    dirty |= DIRTY_SQUASH;
 
             stream.SendNext(dirty);
             if ((dirty & DIRTY_DRIFTING)     != 0) stream.SendNext(isDrifting);
@@ -135,12 +149,14 @@ public class CarNetworkSync : MonoBehaviourPun, IPunObservable
             if ((dirty & DIRTY_DRIFT_LEVEL)  != 0) stream.SendNext(driftLevel);
             if ((dirty & DIRTY_BOOST_LEVEL)  != 0) stream.SendNext(boostLevel);
             if ((dirty & DIRTY_DRIFT_CHARGE) != 0) stream.SendNext(driftCharge);
+            if ((dirty & DIRTY_SQUASH)       != 0) stream.SendNext(QuantizeSquash(squash));
 
             _prevIsDrifting  = isDrifting;
             _prevIsBoosting  = isBoosting;
             _prevDriftLevel  = driftLevel;
             _prevBoostLevel  = boostLevel;
             _prevDriftCharge = driftCharge;
+            _prevSquash      = squash;
         }
         else
         {
@@ -158,6 +174,7 @@ public class CarNetworkSync : MonoBehaviourPun, IPunObservable
             if ((dirty & DIRTY_DRIFT_LEVEL)  != 0) _netDriftLevel  = (int)   stream.ReceiveNext();
             if ((dirty & DIRTY_BOOST_LEVEL)  != 0) _netBoostLevel  = (int)   stream.ReceiveNext();
             if ((dirty & DIRTY_DRIFT_CHARGE) != 0) _netDriftCharge = (float) stream.ReceiveNext();
+            if ((dirty & DIRTY_SQUASH)       != 0) _netSquash      = DequantizeSquash(Convert.ToByte(stream.ReceiveNext()));
 
             _lastReceiveTime = PhotonNetwork.Time;
         }
@@ -167,5 +184,17 @@ public class CarNetworkSync : MonoBehaviourPun, IPunObservable
     {
         if (_driftBoost == null)
             _driftBoost = GetComponent<CarDriftBoost>();
+    }
+
+    // Squash en [-1, 1] → byte [0, 255] para enviar 1 solo byte en lugar de un float (4 bytes).
+    private static byte QuantizeSquash(float squash)
+    {
+        float t = Mathf.Clamp01(squash * 0.5f + 0.5f); // [-1,1] → [0,1]
+        return (byte)Mathf.RoundToInt(t * 255f);
+    }
+
+    private static float DequantizeSquash(byte q)
+    {
+        return (q / 255f) * 2f - 1f; // [0,255] → [-1,1]
     }
 }

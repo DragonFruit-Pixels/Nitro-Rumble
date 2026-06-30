@@ -907,13 +907,6 @@ namespace Photon.Pun
             GameObject instance =GameObject.Instantiate(res, position, rotation) as GameObject;
 
             if (wasActive) res.SetActive(true);
-            
-            #if UNITY_EDITOR
-            if (wasActive && UnityEditor.EditorUtility.IsPersistent(res))
-            {
-                  UnityEditor.EditorUtility.ClearDirty(res);
-            }
-            #endif
             return instance;
         }
 

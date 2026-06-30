@@ -836,6 +836,14 @@ namespace Photon.Realtime
             CustomTypesUnity.Register();
             #endif
 
+            #if UNITY_WEBGL
+            if (this.LoadBalancingPeer.TransportProtocol == ConnectionProtocol.Tcp || this.LoadBalancingPeer.TransportProtocol == ConnectionProtocol.Udp)
+            {
+                this.LoadBalancingPeer.Listener.DebugReturn(DebugLevel.WARNING, "WebGL requires WebSockets. Switching TransportProtocol to WebSocketSecure.");
+                this.LoadBalancingPeer.TransportProtocol = ConnectionProtocol.WebSocketSecure;
+            }
+            #endif
+
             this.State = ClientState.PeerCreated;
         }
 
@@ -902,7 +910,7 @@ namespace Photon.Realtime
             }
 
             Uri uri = new Uri(protocolScheme + address);
-            string result = $"{uri.Scheme}://{uri.Host}:{port}{uri.AbsolutePath}".TrimEnd('/');
+            string result = $"{uri.Scheme}://{uri.Host}:{port}{uri.AbsolutePath}";
 
             if (this.AddressRewriter != null)
             {
@@ -993,7 +1001,6 @@ namespace Photon.Realtime
             }
 
             this.EnableProtocolFallback = appSettings.EnableProtocolFallback;
-            this.ProxyServerAddress = appSettings.ProxyServer;
 
             this.bestRegionSummaryFromStorage = appSettings.BestRegionSummaryFromStorage;
             this.DisconnectedCause = DisconnectCause.None;
@@ -1012,6 +1019,7 @@ namespace Photon.Realtime
                     this.NameServerHost = appSettings.Server;
                 }
 
+                this.ProxyServerAddress = appSettings.ProxyServer;
                 this.NameServerPortInAppSettings = appSettings.Port;
 
                 if (!this.LoadBalancingPeer.Connect(this.NameServerAddress, this.ProxyServerAddress, this.AppId, this.TokenForInit))
@@ -1229,22 +1237,10 @@ namespace Photon.Realtime
         private void CheckConnectSetupWebGl()
         {
             #if UNITY_WEBGL
-            bool protocolCorrected = false;
             if (this.LoadBalancingPeer.TransportProtocol != ConnectionProtocol.WebSocket && this.LoadBalancingPeer.TransportProtocol != ConnectionProtocol.WebSocketSecure)
             {
+                this.DebugReturn(DebugLevel.WARNING, "WebGL requires WebSockets. Switching TransportProtocol to WebSocketSecure.");
                 this.LoadBalancingPeer.TransportProtocol = ConnectionProtocol.WebSocketSecure;
-                protocolCorrected = true;
-            }
-
-            if (this.ExpectedProtocol != null && this.ExpectedProtocol != ConnectionProtocol.WebSocket && this.ExpectedProtocol != ConnectionProtocol.WebSocketSecure)
-            {
-                this.ExpectedProtocol = ConnectionProtocol.WebSocketSecure;
-                protocolCorrected = true;
-            }
-
-            if (protocolCorrected)
-            {
-                this.DebugReturn(DebugLevel.WARNING, "Info: WebGL requires WebSockets. Switching to WebSocketSecure.");
             }
 
             this.EnableProtocolFallback = false; // no fallback on WebGL

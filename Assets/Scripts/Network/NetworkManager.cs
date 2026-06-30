@@ -16,6 +16,10 @@ public class NetworkManager : PunSingleton<NetworkManager>
     {
         base.Awake();
         DontDestroyOnLoad(this.gameObject);
+
+        // Registrar los tipos custom del proyecto en el protocolo de Photon, una sola vez,
+        // antes de conectar. Así podemos enviarlos dentro de RaiseEvent (ver RaceManager).
+        PhotonCustomTypes.Register();
     }
     #endregion
 

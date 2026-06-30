@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using Photon.Pun;
 using Photon.Realtime;
@@ -9,6 +10,14 @@ public class ReconnectionManager : MonoBehaviourPunCallbacks
     [SerializeField] private float _retryDelay  = 2f;
 
     public static ReconnectionManager Instance { get; private set; }
+
+    /// <summary>Estado de la reconexión, para que la UI pueda darle feedback al jugador.</summary>
+    public enum ReconnectState { Reconnecting, Success, Failed }
+
+    /// <summary>(estado, intento actual). El panel de UI se suscribe a esto.</summary>
+    public event Action<ReconnectState, int> OnReconnectStateChanged;
+
+    public int MaxRetries => _maxRetries;
 
     private int  _retryCount;
     private bool _reconnecting;
@@ -49,6 +58,7 @@ public class ReconnectionManager : MonoBehaviourPunCallbacks
         {
             _retryCount++;
             Logger.Log($"[ReconnectionManager] Intento {_retryCount}/{_maxRetries} en {_retryDelay}s...");
+            OnReconnectStateChanged?.Invoke(ReconnectState.Reconnecting, _retryCount);
 
             yield return new WaitForSeconds(_retryDelay);
 
@@ -70,6 +80,7 @@ public class ReconnectionManager : MonoBehaviourPunCallbacks
     {
         if (!_reconnecting) return;
         Logger.Log("[ReconnectionManager] Reconexión exitosa.");
+        OnReconnectStateChanged?.Invoke(ReconnectState.Success, _retryCount);
         Reset();
     }
 
@@ -98,6 +109,7 @@ public class ReconnectionManager : MonoBehaviourPunCallbacks
     private void Fail()
     {
         Logger.Log("[ReconnectionManager] Reconexión fallida. Volviendo al menú.");
+        OnReconnectStateChanged?.Invoke(ReconnectState.Failed, _retryCount);
         Reset();
         if (NetworkManager.Instance != null)
             NetworkManager.Instance.SuppressOfflineOnDisconnect = false;
