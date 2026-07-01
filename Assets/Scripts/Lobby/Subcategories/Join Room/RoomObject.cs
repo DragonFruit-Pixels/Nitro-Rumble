@@ -17,6 +17,11 @@ public class RoomObject : MonoBehaviour
     [SerializeField] private Sprite          _joinSprite;
     [SerializeField] private Sprite          _fullSprite;
 
+    [Header("Max Players Icon")]
+    [SerializeField] private Image  _maxPlayersIcon;
+    [Tooltip("Índice 0 = 1 jugador, 1 = 2, 2 = 3, 3 = 4 (o más, se usa el último disponible).")]
+    [SerializeField] private Sprite[] _playerCountIcons;
+
     private IJoinRoomHandlerCommands _commands;
     private RoomInfo                 _roomInfo;
 
@@ -42,6 +47,12 @@ public class RoomObject : MonoBehaviour
         _joinButton.interactable = !roomFull;
         _joinButtonImage.sprite  = roomFull ? _fullSprite : _joinSprite;
         _joinButtonText.SetText(roomFull ? "FULL" : "JOIN");
+
+        if (_maxPlayersIcon != null && _playerCountIcons != null && _playerCountIcons.Length > 0)
+        {
+            int idx = Mathf.Clamp(roomInfo.MaxPlayers, 1, _playerCountIcons.Length) - 1;
+            _maxPlayersIcon.sprite = _playerCountIcons[idx];
+        }
     }
 
     private void OnEnable()  => _joinButton.onClick.AddListener(OnClick);

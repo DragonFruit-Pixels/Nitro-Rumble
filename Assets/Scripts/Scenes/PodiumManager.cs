@@ -15,10 +15,13 @@ public class PodiumManager : MonoBehaviourPunCallbacks
     [Header("Podio (1°, 2°, 3°)")]
     [SerializeField] private TMP_Text _firstPlaceName;
     [SerializeField] private TMP_Text _firstPlacePoints;
+    [SerializeField] private Image    _firstPlaceMedal;
     [SerializeField] private TMP_Text _secondPlaceName;
     [SerializeField] private TMP_Text _secondPlacePoints;
+    [SerializeField] private Image    _secondPlaceMedal;
     [SerializeField] private TMP_Text _thirdPlaceName;
     [SerializeField] private TMP_Text _thirdPlacePoints;
+    [SerializeField] private Image    _thirdPlaceMedal;
 
     [Header("Tabla completa")]
     [SerializeField] private Transform  _standingsContainer;
@@ -88,25 +91,22 @@ public class PodiumManager : MonoBehaviourPunCallbacks
 
         var standings = ChampionshipManager.Instance.GetStandings();
 
-        FillSlot(0, standings, _firstPlaceName,  _firstPlacePoints);
-        FillSlot(1, standings, _secondPlaceName, _secondPlacePoints);
-        FillSlot(2, standings, _thirdPlaceName,  _thirdPlacePoints);
+        FillSlot(0, standings, _firstPlaceName,  _firstPlacePoints,  _firstPlaceMedal);
+        FillSlot(1, standings, _secondPlaceName, _secondPlacePoints, _secondPlaceMedal);
+        FillSlot(2, standings, _thirdPlaceName,  _thirdPlacePoints,  _thirdPlaceMedal);
     }
 
     private static void FillSlot(int idx,
                                    List<(Player player, int points)> standings,
                                    TMP_Text nameText,
-                                   TMP_Text pointsText)
+                                   TMP_Text pointsText,
+                                   Image medalImage)
     {
-        if (idx >= standings.Count)
-        {
-            if (nameText   != null) nameText.text   = "-";
-            if (pointsText != null) pointsText.text = "";
-            return;
-        }
+        bool hasPlayer = idx < standings.Count;
 
-        if (nameText   != null) nameText.text   = standings[idx].player.NickName;
-        if (pointsText != null) pointsText.text = $"{standings[idx].points} pts";
+        if (nameText   != null) nameText.text   = hasPlayer ? standings[idx].player.NickName : "-";
+        if (pointsText != null) pointsText.text = hasPlayer ? $"{standings[idx].points} pts" : "";
+        if (medalImage != null) medalImage.gameObject.SetActive(hasPlayer);
     }
 
     private void PopulateStandings()
