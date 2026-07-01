@@ -8,6 +8,10 @@ public class MainMenuHandler : MonoBehaviourPunCallbacks, ICarChooserListener
     [Header("Basic Buttons")]
     [SerializeField] private Button _playButton;
     [SerializeField] private Button _quitButton;
+    [SerializeField] private Button _settingsButton;
+
+    [Header("Settings")]
+    [SerializeField] private SettingsPanel _settingsPanel;
 
     [Header("Customization - Car Skin")]
     [SerializeField] private GameObject _carButtonContainer;
@@ -22,6 +26,8 @@ public class MainMenuHandler : MonoBehaviourPunCallbacks, ICarChooserListener
     {
         _playButton.onClick.AddListener(OnPlayPressed);
         _quitButton.onClick.AddListener(OnQuitPressed);
+        if (_settingsButton != null)
+            _settingsButton.onClick.AddListener(OnSettingsPressed);
 
         // LiveOps: si la config llega DESPUÉS de cargar el menú, reconstruir los botones.
         if (LiveOpsConfig.Instance != null)
@@ -32,6 +38,8 @@ public class MainMenuHandler : MonoBehaviourPunCallbacks, ICarChooserListener
     {
         _playButton.onClick.RemoveListener(OnPlayPressed);
         _quitButton.onClick.RemoveListener(OnQuitPressed);
+        if (_settingsButton != null)
+            _settingsButton.onClick.RemoveListener(OnSettingsPressed);
 
         if (LiveOpsConfig.Instance != null)
             LiveOpsConfig.Instance.OnConfigApplied -= OnLiveOpsConfigApplied;
@@ -113,6 +121,11 @@ public class MainMenuHandler : MonoBehaviourPunCallbacks, ICarChooserListener
             PhotonNetwork.NickName = string.Empty;
 
         NetworkManager.Instance.RequestConnection();
+    }
+
+    private void OnSettingsPressed()
+    {
+        _settingsPanel?.Open();
     }
 
     private void OnQuitPressed()

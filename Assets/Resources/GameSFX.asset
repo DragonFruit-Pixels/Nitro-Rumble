@@ -51,6 +51,9 @@ MonoBehaviour:
   raceFinish:
     clip: {fileID: 8300000, guid: d44972e9c1ccbec4abc945dea94b86d0, type: 3}
     volume: 0.9
+  uiClick:
+    clip: {fileID: 8300000, guid: 20ba105f048e52b46af93d3588a89542, type: 3}
+    volume: 0.6
   engine:
     minPitch: 0.5
     maxPitch: 3

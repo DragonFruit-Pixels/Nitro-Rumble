@@ -38,6 +38,23 @@ public class ProximityVoice : MonoBehaviour
         _photonView = GetComponent<PhotonView>();
         if (_speaker == null) _speaker = GetComponentInChildren<Speaker>(true);
         if (_speaker != null) _audioSource = _speaker.GetComponent<AudioSource>();
+
+        if (SettingsManager.Instance != null)
+        {
+            _maxVolume = SettingsManager.Instance.VoiceVolume;
+            SettingsManager.OnVoiceChanged += OnVoiceSettingsChanged;
+        }
+    }
+
+    private void OnDestroy()
+    {
+        SettingsManager.OnVoiceChanged -= OnVoiceSettingsChanged;
+    }
+
+    private void OnVoiceSettingsChanged()
+    {
+        if (SettingsManager.Instance != null)
+            _maxVolume = SettingsManager.Instance.VoiceVolume;
     }
 
     private void Update()

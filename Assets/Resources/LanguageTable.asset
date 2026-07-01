@@ -1,0 +1,39 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f2f84aa5389d82044a48528ffb0e6b2c, type: 3}
+  m_Name: LanguageTable
+  m_EditorClassIdentifier: 
+  _entries:
+  - key: settings.voice.defaultMic
+    translations:
+    - Predeterminado del sistema
+    - System default
+  - key: settings.voice.noMic
+    translations:
+    - No se detecto microfono
+    - No microphone detected
+  - key: settings.voice.using
+    translations:
+    - Usando
+    - Using
+  - key: settings.audio.tab
+    translations:
+    - Audio
+    - Audio
+  - key: settings.voice.output
+    translations:
+    - Salida de audio
+    - Audio Output
+  - key: settings.voice.retryAudio
+    translations:
+    - Reintentar
+    - Retry

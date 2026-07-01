@@ -59,6 +59,9 @@ public class GameSFX : ScriptableObject
     public SFXEntry lapComplete;
     public SFXEntry raceFinish;
 
+    [Header("UI")]
+    public SFXEntry uiClick;
+
     [Header("Car - Engine")]
     public EngineAudioSettings engine;
 

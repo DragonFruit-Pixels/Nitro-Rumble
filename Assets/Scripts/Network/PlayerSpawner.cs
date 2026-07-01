@@ -1,6 +1,7 @@
 using System.Linq;
 using ExitGames.Client.Photon;
 using Photon.Pun;
+using Photon.Voice.Unity;
 using UnityEngine;
 
 /// <summary>
@@ -44,6 +45,9 @@ public class PlayerSpawner : MonoBehaviourPunCallbacks
 
         if (_camera != null && carGO.TryGetComponent(out CarController controller))
             _camera.SetTarget(controller);
+
+        if (SettingsManager.Instance != null && carGO.TryGetComponent(out Recorder recorder))
+            SettingsManager.Instance.ApplyVoice(recorder);
     }
 
     private Transform GetSpawnPoint()

@@ -14,8 +14,8 @@ public class RoomObject : MonoBehaviour
     [SerializeField] private Button          _joinButton;
     [SerializeField] private Image           _joinButtonImage;
     [SerializeField] private TextMeshProUGUI _joinButtonText;
-    [SerializeField] private Color           _joinColor;
-    [SerializeField] private Color           _fullColor;
+    [SerializeField] private Sprite          _joinSprite;
+    [SerializeField] private Sprite          _fullSprite;
 
     private IJoinRoomHandlerCommands _commands;
     private RoomInfo                 _roomInfo;
@@ -40,7 +40,7 @@ public class RoomObject : MonoBehaviour
             _roomConfig.SetText($"{rc} Races\n{laps} Laps");
 
         _joinButton.interactable = !roomFull;
-        _joinButtonImage.color   = roomFull ? _fullColor : _joinColor;
+        _joinButtonImage.sprite  = roomFull ? _fullSprite : _joinSprite;
         _joinButtonText.SetText(roomFull ? "FULL" : "JOIN");
     }
 
