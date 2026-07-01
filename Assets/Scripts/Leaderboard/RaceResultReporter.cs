@@ -38,6 +38,14 @@ public class RaceResultReporter : MonoBehaviour
     {
         if (_reported) return;
 
+        // Solo los jugadores logueados suben al leaderboard. Los invitados juegan anónimos.
+        if (!AuthSession.IsLoggedIn)
+        {
+            _reported = true;
+            Logger.Log("[RaceResultReporter] Invitado (sin login): no se sube resultado al leaderboard.");
+            return;
+        }
+
         Racer local = FindLocalRacer();
         if (local == null)
         {

@@ -1,20 +1,14 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
 using Photon.Pun;
-using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public class MainMenuHandler : MonoBehaviourPunCallbacks, ICarChooserListener
 {
-    [Header("Basic Buttons")] 
+    [Header("Basic Buttons")]
     [SerializeField] private Button _playButton;
     [SerializeField] private Button _quitButton;
 
-    [Header("Customization - Name")]
-    [SerializeField] private TMP_InputField _playerName;
-    
     [Header("Customization - Car Skin")]
     [SerializeField] private GameObject _carButtonContainer;
     [SerializeField] private CarSkinCatalogueSO _carSkinCatalogue;
@@ -28,9 +22,6 @@ public class MainMenuHandler : MonoBehaviourPunCallbacks, ICarChooserListener
     {
         _playButton.onClick.AddListener(OnPlayPressed);
         _quitButton.onClick.AddListener(OnQuitPressed);
-        
-        _playerName.onValueChanged.AddListener(OnNameChanged);
-        _playerName.onEndEdit.AddListener(OnNameEditDone);
 
         // LiveOps: si la config llega DESPUÉS de cargar el menú, reconstruir los botones.
         if (LiveOpsConfig.Instance != null)
@@ -41,9 +32,6 @@ public class MainMenuHandler : MonoBehaviourPunCallbacks, ICarChooserListener
     {
         _playButton.onClick.RemoveListener(OnPlayPressed);
         _quitButton.onClick.RemoveListener(OnQuitPressed);
-        
-        _playerName.onValueChanged.RemoveListener(OnNameChanged);
-        _playerName.onEndEdit.RemoveListener(OnNameEditDone);
 
         if (LiveOpsConfig.Instance != null)
             LiveOpsConfig.Instance.OnConfigApplied -= OnLiveOpsConfigApplied;
@@ -60,22 +48,6 @@ public class MainMenuHandler : MonoBehaviourPunCallbacks, ICarChooserListener
         EnsureSelectedSkinAvailable();
     }
 
-    private void Start()
-    {
-        _playerName.characterLimit = 16;
-        LoadPlayerName();
-    }
-
-    private void LoadPlayerName()
-    {
-        if (!LocalSaveManager.Instance) return;
-
-        string playerName = LocalSaveManager.Instance.Profile.nickname;
-
-        if (playerName != string.Empty)
-            _playerName.text = playerName;
-    }
-    
     private void RebuildCarButtons()
     {
         if (_carSkinCatalogue == null || _carButtonPrefab == null || _carButtonContainer == null)
@@ -126,22 +98,19 @@ public class MainMenuHandler : MonoBehaviourPunCallbacks, ICarChooserListener
             return;
         }
     }
-    
+
     public void ChangeCarSkin(CarSkinSO skin)
     {
         _carSkinLoader?.ChangeCurrentSkin(skin);
     }
-    
+
     private void OnPlayPressed()
     {
         _playButton.interactable = false;
 
-        // Si el jugador dejó el campo vacío, asignar nombre random antes de conectar.
-        if (_playerName != null && string.IsNullOrWhiteSpace(_playerName.text))
-        {
-            string fallback = $"Player_{UnityEngine.Random.Range(1000, 9999)}";
-            _playerName.text = fallback; // dispara OnNameChanged → guarda en LSM y setea NickName
-        }
+        // Invitado: sin nombre → auto anónimo. Logueado: el NickName ya lo fijó AuthSession al loguear.
+        if (!AuthSession.IsLoggedIn)
+            PhotonNetwork.NickName = string.Empty;
 
         NetworkManager.Instance.RequestConnection();
     }
@@ -149,25 +118,12 @@ public class MainMenuHandler : MonoBehaviourPunCallbacks, ICarChooserListener
     private void OnQuitPressed()
     {
         _quitButton.interactable = false;
-        
+
         Application.Quit();
-        
+
         #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
         #endif
-    }
-    
-    private void OnNameChanged(string newName)
-    {
-        // Solo actualiza el NickName en memoria — sin I/O de disco por cada tecla.
-        PhotonNetwork.LocalPlayer.NickName = newName;
-    }
-
-    private void OnNameEditDone(string newName)
-    {
-        // Guarda en disco solo cuando el jugador termina de escribir (Enter o click afuera).
-        if (LocalSaveManager.Instance)
-            LocalSaveManager.Instance.SaveNickname(newName);
     }
 }
 

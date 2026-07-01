@@ -53,6 +53,9 @@ MonoBehaviour:
   - RPC_RequestRamResolve
   - RPC_SetFinished
   - RPC_LoadSkin
+  - CantHearYou
+  - ChangeColour
+  - HeresWhy
   DisableAutoOpenWizard: 1
   ShowSettings: 1
   DevRegionSetOnce: 0

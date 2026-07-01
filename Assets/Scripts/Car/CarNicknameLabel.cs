@@ -53,16 +53,23 @@ public class CarNicknameLabel : MonoBehaviour
     {
         if (_label == null || _racer == null) return;
 
-        string name = _racer.PlayerName;
+        var pv = _racer.photonView;
+        bool ownerKnown = pv != null && pv.Owner != null;
+
+        // Invitado: owner ya resuelto pero sin NickName → auto anónimo, ocultar el cartelito
+        // (en vez de caer al fallback que mostraría el nombre del GameObject, ej. "Car(Clone)").
+        if (PhotonNetwork.InRoom && ownerKnown && string.IsNullOrEmpty(pv.Owner.NickName))
+        {
+            gameObject.SetActive(false);
+            _initialized = true;
+            return;
+        }
 
         // PlayerName devuelve el nombre del GameObject como fallback;
         // esperamos hasta tener un NickName real de Photon antes de marcar como inicializado.
-        var pv = _racer.photonView;
-        bool hasRealName = pv != null
-            && pv.Owner != null
-            && !string.IsNullOrEmpty(pv.Owner.NickName);
+        bool hasRealName = ownerKnown && !string.IsNullOrEmpty(pv.Owner.NickName);
 
-        _label.text = name;
+        _label.text = _racer.PlayerName;
         _initialized = hasRealName || !PhotonNetwork.InRoom;
     }
 }

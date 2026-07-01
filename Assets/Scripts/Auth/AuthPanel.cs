@@ -33,6 +33,13 @@ public class AuthPanel : MonoBehaviour
         if (_registerButton != null) _registerButton.onClick.AddListener(OnRegisterClicked);
     }
 
+    // Cada vez que se abre el popup, empezar limpio (sin status viejo y con los botones activos).
+    private void OnEnable()
+    {
+        SetInteractable(true);
+        SetStatus(string.Empty);
+    }
+
     private void OnDestroy()
     {
         if (_loginButton != null)    _loginButton.onClick.RemoveListener(OnLoginClicked);
