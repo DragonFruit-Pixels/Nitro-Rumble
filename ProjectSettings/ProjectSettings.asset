@@ -707,8 +707,13 @@ PlayerSettings:
   XboxOneOverrideIdentityPublisher: 
   vrEditorSettings: {}
   cloudServicesEnabled:
-    Collab: 1
+    Build: 0
+    Collab: 0
+    Game Performance: 0
+    Purchasing: 0
+    UDP: 0
     UNet: 1
+    Unity Ads: 0
   luminIcon:
     m_Name: 
     m_ModelFolderPath: 
@@ -723,11 +728,11 @@ PlayerSettings:
   apiCompatibilityLevel: 6
   activeInputHandler: 2
   windowsGamepadBackendHint: 0
-  cloudProjectId: e6e518a4-da1f-47fc-902f-9be5622c9d7d
+  cloudProjectId: 834806e4-3ac8-46cb-adeb-ce30f79241ae
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: Unnamed Multiplayer Racing Game
-  organizationId: ignya
+  projectName: Nitro Rumble
+  organizationId: sebas_luser
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0
   playerDataPath: 
