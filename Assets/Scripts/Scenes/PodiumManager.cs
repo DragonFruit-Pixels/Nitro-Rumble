@@ -71,7 +71,7 @@ public class PodiumManager : MonoBehaviourPunCallbacks
         _returnButton.interactable = isHost;
 
         if (_returnButtonLabel != null)
-            _returnButtonLabel.text = isHost ? "VOLVER AL LOBBY" : "Esperando al host...";
+            _returnButtonLabel.text = LocalizationManager.Get(isHost ? "podium.returnToLobby" : "podium.waitingHost");
 
         _returnButton.onClick.AddListener(OnReturnClicked);
 
@@ -80,7 +80,7 @@ public class PodiumManager : MonoBehaviourPunCallbacks
         _leaveButton.interactable = PhotonNetwork.InRoom;
 
         if (_leaveButtonLabel != null)
-            _leaveButtonLabel.text = "LEAVE";
+            _leaveButtonLabel.text = LocalizationManager.Get("podium.leave");
 
         _leaveButton.onClick.AddListener(OnLeaveClicked);
     }
@@ -149,7 +149,7 @@ public class PodiumManager : MonoBehaviourPunCallbacks
             _leaveButton.interactable = false;
 
         if (_leaveButtonLabel != null)
-            _leaveButtonLabel.text = "SALIENDO...";
+            _leaveButtonLabel.text = LocalizationManager.Get("podium.leavingRoom");
 
         if (MatchmakingManager.Instance != null)
             MatchmakingManager.Instance.RequestLeaveRoom();

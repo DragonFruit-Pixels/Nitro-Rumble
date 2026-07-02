@@ -20,6 +20,6 @@ public class ReviveUIPanel : MonoBehaviour
     public void SetSeconds(int seconds)
     {
         if (_countdownText != null)
-            _countdownText.text = $"Reviviendo en {seconds}...";
+            _countdownText.text = string.Format(LocalizationManager.Get("race.reviving"), seconds);
     }
 }

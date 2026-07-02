@@ -210,6 +210,7 @@ GameObject:
   - component: {fileID: 48581273}
   - component: {fileID: 48581275}
   - component: {fileID: 48581274}
+  - component: {fileID: 48581276}
   m_Layer: 0
   m_Name: Title
   m_TagString: Untagged
@@ -334,6 +335,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 48581272}
   m_CullTransparentMesh: 1
+--- !u!114 &48581276
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 48581272}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a63e198ebc3cd1046a21da4f6dd8909f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _key: podium.championshipFinished
 --- !u!1 &70953695
 GameObject:
   m_ObjectHideFlags: 0
@@ -2135,6 +2149,7 @@ GameObject:
   - component: {fileID: 1116231036}
   - component: {fileID: 1116231038}
   - component: {fileID: 1116231037}
+  - component: {fileID: 1116231039}
   m_Layer: 0
   m_Name: Title
   m_TagString: Untagged
@@ -2182,7 +2197,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "CLASIFICACI\xD3N FINAL"
+  m_text: CLASIFICACION FINAL
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -2259,6 +2274,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1116231035}
   m_CullTransparentMesh: 1
+--- !u!114 &1116231039
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1116231035}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a63e198ebc3cd1046a21da4f6dd8909f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _key: podium.finalStandings
 --- !u!1 &1144970767
 GameObject:
   m_ObjectHideFlags: 0

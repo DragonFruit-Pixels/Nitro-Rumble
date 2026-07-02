@@ -26,7 +26,16 @@ public class PlayerStatsPanel : MonoBehaviourPunCallbacks
         base.OnEnable();
         PublishLocalStats();
         Refresh();
+        LocalizationManager.OnLanguageChanged += OnLanguageChanged;
     }
+
+    public override void OnDisable()
+    {
+        base.OnDisable();
+        LocalizationManager.OnLanguageChanged -= OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged(Language _) => Refresh();
 
     // ── Photon callbacks ─────────────────────────────────────────────────────
 
@@ -70,7 +79,7 @@ public class PlayerStatsPanel : MonoBehaviourPunCallbacks
     public void Refresh()
     {
         if (_titleLabel != null)
-            _titleLabel.text = "PLAYER STATS";
+            _titleLabel.text = LocalizationManager.Get("playerStats.title");
 
         if (_statsLabel == null) return;
 

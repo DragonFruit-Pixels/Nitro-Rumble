@@ -97,13 +97,13 @@ public class RaceResultsPanel : MonoBehaviour
             int  total       = cm.TotalRaces;
             bool isLast      = (displayRace + 1) >= total;
 
-            if (_headerLabel != null) _headerLabel.text = $"CARRERA {displayRace + 1} / {total} FINALIZADA";
-            if (_skipLabel   != null) _skipLabel.text   = isLast ? "IR AL PODIO" : "SIGUIENTE CARRERA";
+            if (_headerLabel != null) _headerLabel.text = string.Format(LocalizationManager.Get("race.finishedNumbered"), displayRace + 1, total);
+            if (_skipLabel   != null) _skipLabel.text   = LocalizationManager.Get(isLast ? "race.goToPodium" : "race.nextRace");
         }
         else
         {
             if (_standingsSection != null) _standingsSection.SetActive(false);
-            if (_headerLabel      != null) _headerLabel.text = "CARRERA FINALIZADA";
+            if (_headerLabel      != null) _headerLabel.text = LocalizationManager.Get("race.finished");
         }
 
         // Botón skip: solo host en multiplayer, siempre visible en offline
@@ -122,7 +122,7 @@ public class RaceResultsPanel : MonoBehaviour
         while (remaining > 0f)
         {
             if (_countdownLabel != null)
-                _countdownLabel.text = $"Continuando en {Mathf.CeilToInt(remaining)}s...";
+                _countdownLabel.text = string.Format(LocalizationManager.Get("race.continuingIn"), Mathf.CeilToInt(remaining));
             remaining -= Time.deltaTime;
             yield return null;
         }

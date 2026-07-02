@@ -24,6 +24,7 @@ public class InRoomHandler : LobbySubcategory
         base.OnEnable();
         _joinedRoomStartButton.onClick.AddListener(OnStartClicked);
         _joinedRoomLeaveButton.onClick.AddListener(OnLeaveClicked);
+        LocalizationManager.OnLanguageChanged += OnLanguageChanged;
 
         if (PhotonNetwork.InRoom)
         {
@@ -38,6 +39,13 @@ public class InRoomHandler : LobbySubcategory
         base.OnDisable();
         _joinedRoomStartButton.onClick.RemoveListener(OnStartClicked);
         _joinedRoomLeaveButton.onClick.RemoveListener(OnLeaveClicked);
+        LocalizationManager.OnLanguageChanged -= OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged(Language _)
+    {
+        if (PhotonNetwork.InRoom)
+            ReloadPlayerInfo();
     }
 
     public override void OnJoinedRoom()
@@ -100,7 +108,7 @@ public class InRoomHandler : LobbySubcategory
                 : $"{i + 1}. -\n\n";
         }
 
-        _joinedRoomPlayerCount.SetText($"Players: {count}/{PhotonNetwork.CurrentRoom.MaxPlayers}");
+        _joinedRoomPlayerCount.SetText(string.Format(LocalizationManager.Get("inroom.playersCount"), count, PhotonNetwork.CurrentRoom.MaxPlayers));
         _joinedRoomPlayers.SetText(text);
     }
 

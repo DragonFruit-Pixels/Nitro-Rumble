@@ -4,19 +4,32 @@ using UnityEngine.UI;
 public class LoadingScreenAnimator : MonoBehaviour
 {
     [SerializeField] private Text _loadingText;
-    [SerializeField] private string _baseText = "LOADING";
     [SerializeField] private float _dotStepSeconds = 0.35f;
 
     private string[] _loadingFrames;
 
     private void Awake()
     {
+        RebuildFrames();
+        LocalizationManager.OnLanguageChanged += OnLanguageChanged;
+    }
+
+    private void OnDestroy()
+    {
+        LocalizationManager.OnLanguageChanged -= OnLanguageChanged;
+    }
+
+    private void OnLanguageChanged(Language _) => RebuildFrames();
+
+    private void RebuildFrames()
+    {
+        string baseText = LocalizationManager.Get("loading.text");
         _loadingFrames = new[]
         {
-            _baseText,
-            _baseText + ".",
-            _baseText + "..",
-            _baseText + "..."
+            baseText,
+            baseText + ".",
+            baseText + "..",
+            baseText + "..."
         };
     }
 

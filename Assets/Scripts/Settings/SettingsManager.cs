@@ -108,7 +108,7 @@ public class SettingsManager : MonoBehaviour
     public void SetMicDevice(string d)      { MicDevice       = d; }
     public void SetResolutionIndex(int i)   { ResolutionIndex = i; ApplyVideo(); }
     public void SetFullscreen(bool b)       { Fullscreen      = b; ApplyVideo(); }
-    public void SetLanguage(Language lang)  { CurrentLanguage = lang; OnLanguageChanged?.Invoke(lang); }
+    public void SetLanguage(Language lang)  { CurrentLanguage = lang; LocalizationManager.SetLanguage(lang); OnLanguageChanged?.Invoke(lang); }
     public void SetQualityIndex(int i)      { QualityIndex    = i; ApplyVideo(); }
 
     // ── Apply ────────────────────────────────────────────────────────────────
@@ -157,19 +157,33 @@ public class SettingsManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Unity no expone una API para listar/elegir el dispositivo de salida (a diferencia
-    /// de Microphone.devices para entrada); siempre reproduce por el default del SO.
-    /// Esto fuerza a Unity a re-detectar el dispositivo de salida default actual,
-    /// útil si el jugador lo cambió en el SO después de abrir el juego.
+    /// Describe el dispositivo de salida activo. También fuerza a Unity a re-detectar el
+    /// default del SO (por si cambió mientras el juego estaba abierto) — Unity no sigue
+    /// cambios de dispositivo en vivo de forma confiable por su cuenta.
     /// </summary>
-    public void RetryAudioOutput()
-    {
-        AudioSettings.Reset(AudioSettings.GetConfiguration());
-    }
-
     public string DescribeAudioOutput()
     {
+        AudioSettings.Reset(AudioSettings.GetConfiguration());
+
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+        string deviceName = WindowsAudioDeviceInfo.GetDefaultOutputDeviceName();
+        if (!string.IsNullOrEmpty(deviceName))
+            return deviceName;
+#endif
         AudioConfiguration config = AudioSettings.GetConfiguration();
         return $"{config.sampleRate} Hz · {config.speakerMode}";
+    }
+
+    /// <summary>
+    /// Lista de dispositivos de salida disponibles (solo informativa — Unity no permite
+    /// elegir a cuál reproducir, siempre usa el default del SO). Vacía fuera de Windows.
+    /// </summary>
+    public string[] GetAvailableOutputDevices()
+    {
+#if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
+        return WindowsAudioDeviceInfo.GetOutputDeviceNames();
+#else
+        return new string[0];
+#endif
     }
 }

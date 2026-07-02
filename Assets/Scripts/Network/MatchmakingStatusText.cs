@@ -1,4 +1,3 @@
-using System.Collections;
 using Photon.Pun;
 using TMPro;
 using UnityEngine;
@@ -6,19 +5,11 @@ using UnityEngine;
 [RequireComponent(typeof(TextMeshProUGUI))]
 public class MatchmakingStatusText : MonoBehaviourPunCallbacks
 {
-    [Header("Matchmaking Status Texts")]
-    [SerializeField] private string _inLobbyText = "Status: In Lobby - Join or Create a Room";
-    [SerializeField] private string _joiningRoomText = "Status: Joining Room...";
-    [SerializeField] private string _joiningRandomRoomText = "Status: Searching for a Room...";
-    [SerializeField] private string _creatingRoomText = "Status: Creating Room...";
-    [SerializeField] private string _inRoomText = "Status: In Room";
-    [SerializeField] private string _leavingRoomText = "Status: Leaving Room...";
-
-    [Header("Failure")]
-    [Tooltip("{0} is replaced with the failure message from Photon.")]
-    [SerializeField] private string _failedText = "Status: Failed - {0}";
-
     private TextMeshProUGUI _matchmakingStatusText;
+
+    private MatchmakingStatus _lastStatus = MatchmakingStatus.InLobby;
+    private string _lastFailureMessage;
+    private bool _showingFailure;
 
     private void Awake()
     {
@@ -28,18 +19,23 @@ public class MatchmakingStatusText : MonoBehaviourPunCallbacks
     private void Start()
     {
         TrySubscribeToEvents();
-        UpdateStatusText(MatchmakingManager.Instance.MatchmakingStatus);
+        UpdateStatusText(MatchmakingManager.Instance != null
+            ? MatchmakingManager.Instance.MatchmakingStatus
+            : MatchmakingStatus.InLobby);
     }
 
     public override void OnEnable()
     {
         base.OnEnable();
         TrySubscribeToEvents();
+        LocalizationManager.OnLanguageChanged += OnLanguageChanged;
     }
 
     public override void OnDisable()
     {
         base.OnDisable();
+
+        LocalizationManager.OnLanguageChanged -= OnLanguageChanged;
 
         if (MatchmakingManager.Instance != null)
         {
@@ -61,36 +57,37 @@ public class MatchmakingStatusText : MonoBehaviourPunCallbacks
         }
     }
 
+    private void OnLanguageChanged(Language _)
+    {
+        if (_showingFailure)
+            ShowFailure(_lastFailureMessage);
+        else
+            UpdateStatusText(_lastStatus);
+    }
+
     private void UpdateStatusText(MatchmakingStatus newStatus)
     {
+        _lastStatus = newStatus;
+        _showingFailure = false;
+
+        string key;
         switch (newStatus)
         {
-            case MatchmakingStatus.InLobby:
-                _matchmakingStatusText.text = _inLobbyText;
-                break;
-            case MatchmakingStatus.JoiningRoom:
-                _matchmakingStatusText.text = _joiningRoomText;
-                break;
-            case MatchmakingStatus.JoiningRandomRoom:
-                _matchmakingStatusText.text = _joiningRandomRoomText;
-                break;
-            case MatchmakingStatus.CreatingRoom:
-                _matchmakingStatusText.text = _creatingRoomText;
-                break;
-            case MatchmakingStatus.InRoom:
-                _matchmakingStatusText.text = _inRoomText;
-                break;
-            case MatchmakingStatus.LeavingRoom:
-                _matchmakingStatusText.text = _leavingRoomText;
-                break;
-            default:
-                _matchmakingStatusText.text = _inLobbyText; // fallback, never leave stale text
-                break;
+            case MatchmakingStatus.JoiningRoom:       key = "matchmaking.joiningRoom"; break;
+            case MatchmakingStatus.JoiningRandomRoom: key = "matchmaking.joiningRandomRoom"; break;
+            case MatchmakingStatus.CreatingRoom:       key = "matchmaking.creatingRoom"; break;
+            case MatchmakingStatus.InRoom:             key = "matchmaking.inRoom"; break;
+            case MatchmakingStatus.LeavingRoom:        key = "matchmaking.leavingRoom"; break;
+            default:                                   key = "matchmaking.inLobby"; break; // fallback, never leave stale text
         }
+
+        _matchmakingStatusText.text = LocalizationManager.Get(key);
     }
 
     private void ShowFailure(string message)
     {
-        _matchmakingStatusText.text = string.Format(_failedText, message);
+        _lastFailureMessage = message;
+        _showingFailure = true;
+        _matchmakingStatusText.text = string.Format(LocalizationManager.Get("matchmaking.failed"), message);
     }
 }

@@ -461,6 +461,7 @@ GameObject:
   - component: {fileID: 7923147917416140221}
   - component: {fileID: 7153409423609979944}
   - component: {fileID: 2585119542407777186}
+  - component: {fileID: 7035111377684249891}
   m_Layer: 5
   m_Name: Title
   m_TagString: Untagged
@@ -529,7 +530,20 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: RACE RESULTS
+  m_Text: RESULTADOS DE LA CARRERA
+--- !u!114 &7035111377684249891
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 896753418800421289}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a63e198ebc3cd1046a21da4f6dd8909f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _key: race.results
 --- !u!1 &960108459199897874
 GameObject:
   m_ObjectHideFlags: 0
@@ -1040,7 +1054,7 @@ MonoBehaviour:
   m_spriteAsset: {fileID: 0}
   m_tintAllSprites: 0
   m_StyleSheet: {fileID: 0}
-  m_TextStyleHashCode: 0
+  m_TextStyleHashCode: -1183493901
   m_overrideHtmlColors: 0
   m_faceColor:
     serializedVersion: 2
@@ -1295,6 +1309,7 @@ GameObject:
   - component: {fileID: 505161049140560060}
   - component: {fileID: 2791864146859028992}
   - component: {fileID: 6643973044999204754}
+  - component: {fileID: 5319383851735496920}
   m_Layer: 0
   m_Name: Title
   m_TagString: Untagged
@@ -1439,6 +1454,19 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &5319383851735496920
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2538719959461206015}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a63e198ebc3cd1046a21da4f6dd8909f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _key: race.championship
 --- !u!1 &2549190814179838814
 GameObject:
   m_ObjectHideFlags: 0
@@ -1526,6 +1554,7 @@ GameObject:
   - component: {fileID: 2955696135939067564}
   - component: {fileID: 3241139510776251668}
   - component: {fileID: 8911169496590968134}
+  - component: {fileID: 231184764962702327}
   m_Layer: 0
   m_Name: TitleText
   m_TagString: Untagged
@@ -1581,7 +1610,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: CLASH!
+  m_text: "\xA1CHOQUE!"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 0}
   m_sharedMaterial: {fileID: 0}
@@ -1650,6 +1679,19 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &231184764962702327
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2583146145839729606}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a63e198ebc3cd1046a21da4f6dd8909f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _key: race.clash
 --- !u!1 &2676533260568276697
 GameObject:
   m_ObjectHideFlags: 0
@@ -1859,6 +1901,7 @@ GameObject:
   - component: {fileID: 6626966104421763543}
   - component: {fileID: 7656404022094803909}
   - component: {fileID: 8066140165738582054}
+  - component: {fileID: 8887834758291181625}
   m_Layer: 0
   m_Name: OpponentLabel
   m_TagString: Untagged
@@ -1983,6 +2026,19 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &8887834758291181625
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2925729656989174706}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a63e198ebc3cd1046a21da4f6dd8909f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _key: race.rival
 --- !u!1 &2973164618117239614
 GameObject:
   m_ObjectHideFlags: 0
@@ -2328,7 +2384,7 @@ Canvas:
   m_OverrideSorting: 0
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
-  m_AdditionalShaderChannelsFlag: 0
+  m_AdditionalShaderChannelsFlag: 25
   m_SortingLayerID: 0
   m_SortingOrder: 20
   m_TargetDisplay: 0
@@ -3623,6 +3679,7 @@ GameObject:
   - component: {fileID: 3166259111085744425}
   - component: {fileID: 1066494632049117965}
   - component: {fileID: 1118105969843184324}
+  - component: {fileID: 7404640442309278750}
   m_Layer: 5
   m_Name: TIMEHdr
   m_TagString: Untagged
@@ -3691,7 +3748,20 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: TIME
+  m_Text: TIEMPO
+--- !u!114 &7404640442309278750
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5044280241107525468}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a63e198ebc3cd1046a21da4f6dd8909f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _key: inroom.leaderboard.time
 --- !u!1 &5057109673948822047
 GameObject:
   m_ObjectHideFlags: 0
@@ -4017,6 +4087,7 @@ GameObject:
   - component: {fileID: 1615864008176241722}
   - component: {fileID: 4466328259345810052}
   - component: {fileID: 1664580810331379560}
+  - component: {fileID: 2270109917788612175}
   m_Layer: 0
   m_Name: LocalLabel
   m_TagString: Untagged
@@ -4141,6 +4212,19 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_baseMaterial: {fileID: 0}
   m_maskOffset: {x: 0, y: 0, z: 0, w: 0}
+--- !u!114 &2270109917788612175
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5209598425475689058}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a63e198ebc3cd1046a21da4f6dd8909f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _key: race.you
 --- !u!1 &5225064588842577137
 GameObject:
   m_ObjectHideFlags: 0
@@ -4192,6 +4276,7 @@ GameObject:
   - component: {fileID: 6198747112662358975}
   - component: {fileID: 3428457543393232778}
   - component: {fileID: 8460488073873716770}
+  - component: {fileID: 4108317522668553015}
   m_Layer: 5
   m_Name: Subtitle
   m_TagString: Untagged
@@ -4260,7 +4345,20 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: You finished the race!
+  m_Text: "\xA1Terminaste la carrera!"
+--- !u!114 &4108317522668553015
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5286689957316277597}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a63e198ebc3cd1046a21da4f6dd8909f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _key: race.finishBannerSubtitle
 --- !u!1 &5413649742001835899
 GameObject:
   m_ObjectHideFlags: 0
@@ -4273,6 +4371,7 @@ GameObject:
   - component: {fileID: 8605541005178916914}
   - component: {fileID: 6798072025984189925}
   - component: {fileID: 8472141446918371202}
+  - component: {fileID: 7874949268499188813}
   m_Layer: 0
   m_Name: Title
   m_TagString: Untagged
@@ -4417,6 +4516,19 @@ MonoBehaviour:
   m_FlexibleWidth: -1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
+--- !u!114 &7874949268499188813
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5413649742001835899}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a63e198ebc3cd1046a21da4f6dd8909f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _key: race.thisRace
 --- !u!1 &5533352339527328722
 GameObject:
   m_ObjectHideFlags: 0
@@ -4659,8 +4771,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 364.8, y: -34}
-  m_SizeDelta: {x: 729.6, y: 0}
+  m_AnchoredPosition: {x: 294.39996, y: -34}
+  m_SizeDelta: {x: 588.7999, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &8106525588558157458
 MonoBehaviour:
@@ -6109,6 +6221,7 @@ GameObject:
   - component: {fileID: 2959697346558367384}
   - component: {fileID: 8437407183267635773}
   - component: {fileID: 142736716192034616}
+  - component: {fileID: 1966591087874764211}
   m_Layer: 5
   m_Name: Label
   m_TagString: Untagged
@@ -6177,7 +6290,20 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: FINISH
+  m_Text: "\xA1LLEGASTE!"
+--- !u!114 &1966591087874764211
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7202906225797642113}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a63e198ebc3cd1046a21da4f6dd8909f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _key: race.finishBanner
 --- !u!1 &7298692232589527162
 GameObject:
   m_ObjectHideFlags: 0
@@ -7231,6 +7357,7 @@ GameObject:
   - component: {fileID: 5454676135793018351}
   - component: {fileID: 7128719984414277930}
   - component: {fileID: 4209731341443810246}
+  - component: {fileID: 8848042125010098455}
   m_Layer: 5
   m_Name: PLAYERHdr
   m_TagString: Untagged
@@ -7299,7 +7426,20 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: PLAYER
+  m_Text: JUGADOR
+--- !u!114 &8848042125010098455
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8741697439476361006}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a63e198ebc3cd1046a21da4f6dd8909f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _key: inroom.leaderboard.player
 --- !u!1 &8842413728625915774
 GameObject:
   m_ObjectHideFlags: 0

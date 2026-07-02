@@ -1,6 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using Photon.Pun;
 using TMPro;
 using UnityEngine;
@@ -8,12 +5,8 @@ using UnityEngine;
 [RequireComponent(typeof(TextMeshProUGUI))]
 public class NetworkStatusText : MonoBehaviourPunCallbacks
 {
-    [Header("Network Status Texts")]
-    [SerializeField] private string _offlineText = "Status: Offline - Press Play To Connect";
-    [SerializeField] private string _connectingText = "Status: Connecting...";
-    [SerializeField] private string _connectedText = "Status: Connected!";
-    
     private TextMeshProUGUI _networkStatusText;
+    private NetworkStatus _lastStatus = NetworkStatus.Offline;
 
     private void Awake()
     {
@@ -23,7 +16,7 @@ public class NetworkStatusText : MonoBehaviourPunCallbacks
     private void Start()
     {
         TrySubscribeToEvents();
-        
+
         // Get first status
         UpdateStatusText(NetworkManager.Instance.NetworkStatus);
     }
@@ -32,36 +25,40 @@ public class NetworkStatusText : MonoBehaviourPunCallbacks
     {
         base.OnEnable();
         TrySubscribeToEvents();
+        LocalizationManager.OnLanguageChanged += OnLanguageChanged;
     }
 
     public override void OnDisable()
     {
         base.OnDisable();
-        NetworkManager.Instance.OnStatusChanged -= UpdateStatusText;
+        LocalizationManager.OnLanguageChanged -= OnLanguageChanged;
+        if (NetworkManager.Instance != null)
+            NetworkManager.Instance.OnStatusChanged -= UpdateStatusText;
     }
 
     private void TrySubscribeToEvents()
     {
         if (NetworkManager.Instance)
         {
-            NetworkManager.Instance.OnStatusChanged -= UpdateStatusText;            
+            NetworkManager.Instance.OnStatusChanged -= UpdateStatusText;
             NetworkManager.Instance.OnStatusChanged += UpdateStatusText;
         }
     }
 
+    private void OnLanguageChanged(Language _) => UpdateStatusText(_lastStatus);
+
     private void UpdateStatusText(NetworkStatus newStatus)
     {
+        _lastStatus = newStatus;
+
+        string key;
         switch (newStatus)
         {
-            case NetworkStatus.Offline:
-                _networkStatusText.text = _offlineText;
-                break;
-            case NetworkStatus.Connecting:
-                _networkStatusText.text = _connectingText;
-                break;
-            case NetworkStatus.Connected:
-                _networkStatusText.text = _connectedText;
-                break;
+            case NetworkStatus.Connecting: key = "menu.statusConnecting"; break;
+            case NetworkStatus.Connected:  key = "menu.statusConnected"; break;
+            default:                       key = "menu.statusPlayToConnect"; break;
         }
+
+        _networkStatusText.text = LocalizationManager.Get(key);
     }
 }

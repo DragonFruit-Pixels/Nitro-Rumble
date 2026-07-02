@@ -33,7 +33,7 @@ public class HUDCountdownDisplay : MonoBehaviour
         StopAllCoroutines();
         var sfx = GameSFX.Instance;
         if (value == 0)
-            StartCoroutine(Animate("GO!", sfx?.countdownGo ?? default, _goDuration));
+            StartCoroutine(Animate(LocalizationManager.Get("race.go"), sfx?.countdownGo ?? default, _goDuration));
         else if (value > 0)
             StartCoroutine(Animate(value.ToString(), sfx?.countdownBeep ?? default, _numberDuration));
     }

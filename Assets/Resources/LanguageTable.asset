@@ -25,10 +25,6 @@ MonoBehaviour:
     translations:
     - Usando
     - Using
-  - key: settings.audio.tab
-    translations:
-    - Audio
-    - Audio
   - key: settings.voice.output
     translations:
     - Salida de audio
@@ -37,3 +33,367 @@ MonoBehaviour:
     translations:
     - Reintentar
     - Retry
+  - key: menu.play
+    translations:
+    - JUGAR
+    - PLAY
+  - key: menu.statusPlayToConnect
+    translations:
+    - Presiona Play para conectarte y unirte al Lobby!
+    - Press Play to connect and join the Lobby!
+  - key: auth.usernamePlaceholder
+    translations:
+    - Usuario
+    - Username
+  - key: auth.passwordPlaceholder
+    translations:
+    - "Contrase\xF1a"
+    - Password
+  - key: auth.login
+    translations:
+    - Ingresar
+    - Log In
+  - key: auth.register
+    translations:
+    - Registrarse
+    - Register
+  - key: auth.loginTopRight
+    translations:
+    - "Iniciar sesi\xF3n"
+    - Log In
+  - key: auth.logoutTopRight
+    translations:
+    - "Cerrar sesi\xF3n"
+    - Log Out
+  - key: settings.title
+    translations:
+    - CONFIGURACION
+    - SETTINGS
+  - key: settings.tab.audio
+    translations:
+    - Audio
+    - Audio
+  - key: settings.tab.video
+    translations:
+    - Video
+    - Video
+  - key: settings.tab.language
+    translations:
+    - Idioma
+    - Language
+  - key: settings.tab.voice
+    translations:
+    - Voz
+    - Voice
+  - key: settings.audio.master
+    translations:
+    - Volumen Master
+    - Master Volume
+  - key: settings.audio.music
+    translations:
+    - Musica
+    - Music
+  - key: settings.audio.sfx
+    translations:
+    - Efectos de Sonido
+    - Sound Effects
+  - key: settings.audio.voice
+    translations:
+    - Voz
+    - Voice
+  - key: settings.video.resolution
+    translations:
+    - Resolucion
+    - Resolution
+  - key: settings.video.fullscreen
+    translations:
+    - Pantalla completa
+    - Fullscreen
+  - key: settings.video.quality
+    translations:
+    - Calidad grafica
+    - Graphics Quality
+  - key: settings.voice.micEnabled
+    translations:
+    - Microfono activo
+    - Microphone Enabled
+  - key: settings.voice.inputDevice
+    translations:
+    - Dispositivo de entrada
+    - Input Device
+  - key: settings.footer.save
+    translations:
+    - Guardar
+    - Save
+  - key: settings.footer.cancel
+    translations:
+    - Cancelar
+    - Cancel
+  - key: settings.footer.restore
+    translations:
+    - Restaurar
+    - Restore
+  - key: settings.footer.quit
+    translations:
+    - SALIR
+    - QUIT
+  - key: reconnect.reconnecting
+    translations:
+    - "Reconectando... (intento {0}/{1})"
+    - "Reconnecting... (attempt {0}/{1})"
+  - key: reconnect.success
+    translations:
+    - "\xA1Reconectado!"
+    - Reconnected!
+  - key: reconnect.failed
+    translations:
+    - "Conexi\xF3n perdida"
+    - Connection lost
+  - key: menu.statusConnecting
+    translations:
+    - "Estado: Conectando..."
+    - "Status: Connecting..."
+  - key: menu.statusConnected
+    translations:
+    - "Estado: Conectado!"
+    - "Status: Connected!"
+  - key: lobby.roomList.title
+    translations:
+    - Lista de Salas
+    - Room List
+  - key: lobby.joinRoom.title
+    translations:
+    - Unirse a Sala
+    - Join Room
+  - key: lobby.createRoom.title
+    translations:
+    - Crear Sala
+    - Create Room
+  - key: lobby.createRoom.nameLabel
+    translations:
+    - 'Nombre de Sala:'
+    - 'Room Name:'
+  - key: lobby.createRoom.namePlaceholder
+    translations:
+    - Ingresa el nombre de la sala...
+    - Enter room name...
+  - key: lobby.createRoom.button
+    translations:
+    - CREAR
+    - CREATE
+  - key: inroom.playerList
+    translations:
+    - Lista de Jugadores
+    - Player List
+  - key: inroom.roomConfig
+    translations:
+    - Configuracion de Sala
+    - Room Configuration
+  - key: inroom.racesUntilCompletion
+    translations:
+    - CARRERAS HASTA COMPLETAR
+    - RACES UNTIL COMPLETION
+  - key: inroom.leave
+    translations:
+    - Abandonar
+    - Leave
+  - key: inroom.start
+    translations:
+    - Empezar
+    - Start
+  - key: inroom.yourStats
+    translations:
+    - TUS ESTADISTICAS
+    - YOUR STATS
+  - key: inroom.leaderboard.player
+    translations:
+    - JUGADOR
+    - PLAYER
+  - key: inroom.leaderboard.time
+    translations:
+    - TIEMPO
+    - TIME
+  - key: inroom.leaderboard.yourRecord
+    translations:
+    - TU RECORD
+    - YOUR RECORD
+  - key: inroom.leaderboard.bestTime
+    translations:
+    - MEJOR TIEMPO
+    - BEST TIME
+  - key: inroom.leaderboard.bestPosition
+    translations:
+    - MEJOR POSICION
+    - BEST POSITION
+  - key: inroom.leaderboard.noData
+    translations:
+    - Sin registros todavia
+    - No records yet
+  - key: podium.championshipFinished
+    translations:
+    - CAMPEONATO FINALIZADO
+    - CHAMPIONSHIP FINISHED
+  - key: podium.finalStandings
+    translations:
+    - CLASIFICACION FINAL
+    - FINAL STANDINGS
+  - key: podium.leave
+    translations:
+    - SALIR
+    - LEAVE
+  - key: podium.returnToLobby
+    translations:
+    - VOLVER AL LOBBY
+    - RETURN TO LOBBY
+  - key: podium.waitingHost
+    translations:
+    - Esperando al host...
+    - Waiting for host...
+  - key: podium.leavingRoom
+    translations:
+    - SALIENDO...
+    - LEAVING...
+  - key: matchmaking.inLobby
+    translations:
+    - 'Estado: En el Lobby - Unite o crea una Sala'
+    - 'Status: In Lobby - Join or Create a Room'
+  - key: matchmaking.joiningRoom
+    translations:
+    - 'Estado: Uniendose a la Sala...'
+    - 'Status: Joining Room...'
+  - key: matchmaking.joiningRandomRoom
+    translations:
+    - 'Estado: Buscando una Sala...'
+    - 'Status: Searching for a Room...'
+  - key: matchmaking.creatingRoom
+    translations:
+    - 'Estado: Creando Sala...'
+    - 'Status: Creating Room...'
+  - key: matchmaking.inRoom
+    translations:
+    - 'Estado: En Sala'
+    - 'Status: In Room'
+  - key: matchmaking.leavingRoom
+    translations:
+    - 'Estado: Abandonando Sala...'
+    - 'Status: Leaving Room...'
+  - key: matchmaking.failed
+    translations:
+    - 'Estado: Fallo - {0}'
+    - 'Status: Failed - {0}'
+  - key: inroom.playersCount
+    translations:
+    - 'Jugadores: {0}/{1}'
+    - 'Players: {0}/{1}'
+  - key: inroom.raceConfigSummary
+    translations:
+    - "{0} Carreras \xB7 3 Vueltas \xB7 {1} Mapas en el pool"
+    - "{0} Races \xB7 3 Laps \xB7 {1} Maps in pool"
+  - key: roomObject.racesLaps
+    translations:
+    - '{0} Carreras
+
+      {1} Vueltas'
+    - '{0} Races
+
+      {1} Laps'
+  - key: roomObject.join
+    translations:
+    - UNIRSE
+    - JOIN
+  - key: roomObject.full
+    translations:
+    - LLENO
+    - FULL
+  - key: roomObject.fullLabel
+    translations:
+    - Sala llena
+    - Room Full
+  - key: roomObject.playersLabel
+    translations:
+    - Jugadores
+    - Players
+  - key: race.finishedNumbered
+    translations:
+    - "CARRERA {0} / {1} FINALIZADA"
+    - "RACE {0} / {1} FINISHED"
+  - key: race.finished
+    translations:
+    - CARRERA FINALIZADA
+    - RACE FINISHED
+  - key: race.goToPodium
+    translations:
+    - IR AL PODIO
+    - GO TO PODIUM
+  - key: race.nextRace
+    translations:
+    - SIGUIENTE CARRERA
+    - NEXT RACE
+  - key: race.continuingIn
+    translations:
+    - "Continuando en {0}s..."
+    - "Continuing in {0}s..."
+  - key: race.reviving
+    translations:
+    - "Reviviendo en {0}..."
+    - "Reviving in {0}..."
+  - key: race.finisherAnnounce
+    translations:
+    - "{0} termino la carrera!"
+    - "{0} finished the race!"
+  - key: race.aloneWaiting
+    translations:
+    - Estas corriendo solo. Esperando reconexiones.
+    - You're racing alone. Waiting for reconnections.
+  - key: race.unknownPlayer
+    translations:
+    - Un jugador
+    - A player
+  - key: race.go
+    translations:
+    - "\xA1YA!"
+    - GO!
+  - key: race.clash
+    translations:
+    - "\xA1CHOQUE!"
+    - CLASH!
+  - key: race.you
+    translations:
+    - TU
+    - YOU
+  - key: race.rival
+    translations:
+    - RIVAL
+    - OPPONENT
+  - key: race.results
+    translations:
+    - RESULTADOS DE LA CARRERA
+    - RACE RESULTS
+  - key: race.finishBanner
+    translations:
+    - "\xA1LLEGASTE!"
+    - FINISH!
+  - key: race.finishBannerSubtitle
+    translations:
+    - "\xA1Terminaste la carrera!"
+    - You finished the race!
+  - key: race.thisRace
+    translations:
+    - ESTA CARRERA
+    - THIS RACE
+  - key: race.championship
+    translations:
+    - CAMPEONATO
+    - CHAMPIONSHIP
+  - key: playerStats.title
+    translations:
+    - ESTADISTICAS DE JUGADOR
+    - PLAYER STATS
+  - key: loading.text
+    translations:
+    - CARGANDO
+    - LOADING
+  - key: loading.hint
+    translations:
+    - Preparando la proxima carrera
+    - Preparing the next race

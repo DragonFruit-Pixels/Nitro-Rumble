@@ -183,7 +183,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _loadingText: {fileID: 1322704961}
-  _baseText: LOADING
   _dotStepSeconds: 0.35
 --- !u!1 &200000
 GameObject:
@@ -1036,6 +1035,7 @@ GameObject:
   - component: {fileID: 1159662090}
   - component: {fileID: 1159662092}
   - component: {fileID: 1159662091}
+  - component: {fileID: 1159662093}
   m_Layer: 0
   m_Name: HintText
   m_TagString: Untagged
@@ -1105,6 +1105,19 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1159662089}
   m_CullTransparentMesh: 1
+--- !u!114 &1159662093
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1159662089}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a63e198ebc3cd1046a21da4f6dd8909f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _key: loading.hint
 --- !u!1 &1219503936
 GameObject:
   m_ObjectHideFlags: 0
@@ -1252,7 +1265,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: LOADING
+  m_Text: CARGANDO
 --- !u!222 &1322704962
 CanvasRenderer:
   m_ObjectHideFlags: 0

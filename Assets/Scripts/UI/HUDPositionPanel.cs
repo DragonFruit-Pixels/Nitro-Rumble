@@ -54,6 +54,9 @@ public class HUDPositionPanel : MonoBehaviour
 
     private static string GetSuffix(int n)
     {
+        if (LocalizationManager.CurrentLanguage == Language.Spanish)
+            return "°"; // 1°, 2°, 3°... el español no usa sufijos ordinales tipo st/nd/rd
+
         int mod100 = n % 100;
         if (mod100 >= 11 && mod100 <= 13) return "th";
         switch (n % 10)

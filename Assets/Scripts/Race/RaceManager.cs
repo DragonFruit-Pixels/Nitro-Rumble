@@ -339,7 +339,7 @@ public class RaceManager : Singleton<RaceManager>, IOnEventCallback, IInRoomCall
             Logger.Log($"[RaceManager MC] Timeout dinámico: {dynamicTimeout:F1}s (avgLap={avgLapTime:F1}s)");
 
             // Notificar a todos para que muestren el countdown en el HUD.
-            string finisherName = PhotonView.Find(racerViewId)?.GetComponent<Racer>()?.PlayerName ?? "Un jugador";
+            string finisherName = PhotonView.Find(racerViewId)?.GetComponent<Racer>()?.PlayerName ?? LocalizationManager.Get("race.unknownPlayer");
             object[] cdPayload = { finisherName, dynamicTimeout };
             PhotonNetwork.RaiseEvent(
                 EVENT_COUNTDOWN,

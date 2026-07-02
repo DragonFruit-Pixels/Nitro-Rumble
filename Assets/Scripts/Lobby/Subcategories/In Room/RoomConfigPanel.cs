@@ -48,6 +48,8 @@ public class RoomConfigPanel : LobbySubcategory
         // resume desde background, etc.), reconstruir la lista de mapas disponibles.
         if (LiveOpsConfig.Instance != null)
             LiveOpsConfig.Instance.OnConfigApplied += OnLiveOpsConfigApplied;
+
+        LocalizationManager.OnLanguageChanged += OnLanguageChanged;
     }
 
     public override void OnDisable()
@@ -58,7 +60,11 @@ public class RoomConfigPanel : LobbySubcategory
 
         if (LiveOpsConfig.Instance != null)
             LiveOpsConfig.Instance.OnConfigApplied -= OnLiveOpsConfigApplied;
+
+        LocalizationManager.OnLanguageChanged -= OnLanguageChanged;
     }
+
+    private void OnLanguageChanged(Language _) => RefreshSummary();
 
     private void OnLiveOpsConfigApplied()
     {
@@ -105,6 +111,10 @@ public class RoomConfigPanel : LobbySubcategory
             TMP_Text   label  = go.GetComponentInChildren<TMP_Text>();
 
             if (label  != null) label.text = track.TrackName;
+
+            Transform photoT = go.transform.Find("TrackPhoto");
+            if (photoT != null && photoT.TryGetComponent(out Image photoImg))
+                photoImg.sprite = track.TrackImage;
 
             if (toggle != null)
             {
@@ -231,6 +241,6 @@ public class RoomConfigPanel : LobbySubcategory
     private void RefreshSummary()
     {
         if (_summaryLabel == null) return;
-        _summaryLabel.text = $"{_raceCount} Races · 3 Laps · {_pool.Count} Maps in pool";
+        _summaryLabel.text = string.Format(LocalizationManager.Get("inroom.raceConfigSummary"), _raceCount, _pool.Count);
     }
 }

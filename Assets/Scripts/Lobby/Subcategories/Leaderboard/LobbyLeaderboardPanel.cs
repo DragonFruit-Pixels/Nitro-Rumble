@@ -1,17 +1,18 @@
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 /// <summary>
 /// Panel del lobby que muestra:
-///   - Botones para seleccionar un track (reutiliza TrackChooseButton).
+///   - Carrusel (foto grande + flechas prev/next) para elegir un track.
 ///   - Top-N del leaderboard global para ese track (reutiliza LeaderboardRow prefab).
 ///   - Récord personal del jugador local para ese track (LocalSaveManager).
 ///
 /// Wiring en el Editor:
 ///   _trackCatalogue       → el mismo ScriptableObject de tracks que usa el create room.
-///   _trackButtonContainer → Transform padre donde se instancian los botones de track.
-///   _trackButtonPrefab    → prefab TrackChooseButton.
+///   _trackPhoto           → Image grande del carrusel.
+///   _prevTrackButton / _nextTrackButton → flechas del carrusel.
 ///   _rowsContainer        → Transform con VerticalLayoutGroup para las filas del leaderboard.
 ///   _rowPrefab            → el mismo prefab LeaderboardRow que usa LeaderboardPanel.
 ///   _topN                 → cuántas filas mostrar (default 5).
@@ -19,12 +20,13 @@ using UnityEngine;
 ///   _personalBestPosition → TMP_Text para la mejor posición personal.
 ///   _noDataLabel          → TMP_Text que se muestra cuando no hay datos (opcional).
 /// </summary>
-public class LobbyLeaderboardPanel : MonoBehaviour, ITrackChooseListener
+public class LobbyLeaderboardPanel : MonoBehaviour
 {
-    [Header("Track Selection")]
+    [Header("Track Carousel")]
     [SerializeField] private TrackCatalogueSO _trackCatalogue;
-    [SerializeField] private Transform        _trackButtonContainer;
-    [SerializeField] private TrackChooseButton _trackButtonPrefab;
+    [SerializeField] private Image  _trackPhoto;
+    [SerializeField] private Button _prevTrackButton;
+    [SerializeField] private Button _nextTrackButton;
 
     [Header("Global Leaderboard")]
     [SerializeField] private Transform  _rowsContainer;
@@ -37,50 +39,32 @@ public class LobbyLeaderboardPanel : MonoBehaviour, ITrackChooseListener
     [SerializeField] private TMP_Text _personalBestPosition;
     [SerializeField] private TMP_Text _selectedTrackName;
 
-    private readonly List<TrackChooseButton> _trackButtons = new();
     private TrackSO _selectedTrack;
+    private int _trackIndex;
 
     private void Start()
     {
-        SpawnTrackButtons();
+        if (_prevTrackButton != null) _prevTrackButton.onClick.AddListener(() => ShowTrack(_trackIndex - 1));
+        if (_nextTrackButton != null) _nextTrackButton.onClick.AddListener(() => ShowTrack(_trackIndex + 1));
+
+        ShowTrack(0);
     }
 
-    private void SpawnTrackButtons()
+    // ── Carrusel ─────────────────────────────────────────────────────────────
+
+    private void ShowTrack(int index)
     {
-        if (_trackCatalogue == null || _trackButtonPrefab == null || _trackButtonContainer == null) return;
+        if (_trackCatalogue == null || _trackCatalogue.Tracks == null || _trackCatalogue.Tracks.Count == 0) return;
 
-        foreach (TrackSO track in _trackCatalogue.Tracks)
-        {
-            TrackChooseButton btn = Instantiate(_trackButtonPrefab, _trackButtonContainer);
-            btn.Init(this, track);
-            _trackButtons.Add(btn);
-        }
+        int count = _trackCatalogue.Tracks.Count;
+        _trackIndex = ((index % count) + count) % count;
+        _selectedTrack = _trackCatalogue.Tracks[_trackIndex];
 
-        // Seleccionar el primer track por defecto.
-        if (_trackButtons.Count > 0)
-            _trackButtons[0].OnTrackChooseExternal();
-    }
-
-    // ── ITrackChooseListener ────────────────────────────────────────────────
-
-    public void OnTrackChoose(TrackSO track)
-    {
-        _selectedTrack = track;
-
-        if (_selectedTrackName != null)
-            _selectedTrackName.text = track.TrackName;
+        if (_trackPhoto != null) _trackPhoto.sprite = _selectedTrack.TrackImage;
+        if (_selectedTrackName != null) _selectedTrackName.text = _selectedTrack.TrackName;
 
         RefreshLeaderboard();
         RefreshPersonalRecord();
-    }
-
-    public void UnselectOthers(TrackChooseButton selectedButton)
-    {
-        foreach (var btn in _trackButtons)
-        {
-            if (btn != selectedButton)
-                btn.Select(false);
-        }
     }
 
     // ── Leaderboard global ─────────────────────────────────────────────────

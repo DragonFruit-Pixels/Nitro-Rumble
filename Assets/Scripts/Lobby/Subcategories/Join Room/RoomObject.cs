@@ -34,19 +34,19 @@ public class RoomObject : MonoBehaviour
         bool roomFull = roomInfo.PlayerCount >= roomInfo.MaxPlayers;
 
         _roomName.SetText(roomInfo.Name);
-        _roomPlayerQuantity.SetText(
-            $"[{roomInfo.PlayerCount}/{roomInfo.MaxPlayers}] {(roomFull ? "Sala llena" : "Jugadores")}");
+        string statusLabel = LocalizationManager.Get(roomFull ? "roomObject.fullLabel" : "roomObject.playersLabel");
+        _roomPlayerQuantity.SetText($"[{roomInfo.PlayerCount}/{roomInfo.MaxPlayers}] {statusLabel}");
 
         var props = roomInfo.CustomProperties;
         int laps = props.TryGetValue(Keys.LAPS_KEY,       out object l)  && l  is int li ? li : 3;
         int rc   = props.TryGetValue(Keys.RACE_COUNT_KEY, out object r)  && r  is int ri ? ri : 1;
 
         if (_roomConfig != null)
-            _roomConfig.SetText($"{rc} Races\n{laps} Laps");
+            _roomConfig.SetText(string.Format(LocalizationManager.Get("roomObject.racesLaps"), rc, laps));
 
         _joinButton.interactable = !roomFull;
         _joinButtonImage.sprite  = roomFull ? _fullSprite : _joinSprite;
-        _joinButtonText.SetText(roomFull ? "FULL" : "JOIN");
+        _joinButtonText.SetText(LocalizationManager.Get(roomFull ? "roomObject.full" : "roomObject.join"));
 
         if (_maxPlayersIcon != null && _playerCountIcons != null && _playerCountIcons.Length > 0)
         {

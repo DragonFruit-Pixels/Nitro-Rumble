@@ -45,7 +45,7 @@ public class SettingsPanel : MonoBehaviour
     [SerializeField] private Toggle _voiceEnabledToggle;
     [SerializeField] private TMP_Dropdown _micDropdown;
     [SerializeField] private TMP_Text _micStatusLabel;
-    [SerializeField] private Button _btnRetryAudioOutput;
+    [SerializeField] private TMP_Dropdown _outputDropdown;
     [SerializeField] private TMP_Text _audioOutputLabel;
 
     [Header("Footer")]
@@ -79,6 +79,26 @@ public class SettingsPanel : MonoBehaviour
 
     // ── Unity lifecycle ──────────────────────────────────────────────────────
 
+    void OnEnable()
+    {
+        LocalizationManager.OnLanguageChanged += OnLanguageChanged;
+    }
+
+    void OnDisable()
+    {
+        LocalizationManager.OnLanguageChanged -= OnLanguageChanged;
+    }
+
+    // Textos generados a mano (no LocalizedText) que dependen del idioma: hay que
+    // refrescarlos si el idioma cambia mientras el panel ya está abierto.
+    void OnLanguageChanged(Language _)
+    {
+        PopulateMicDropdown(SettingsManager.Instance.MicDevice);
+        RefreshMicStatusLabel(SettingsManager.Instance.MicDevice);
+        PopulateOutputDropdown();
+        RefreshAudioOutputLabel();
+    }
+
     void Awake()
     {
         _panelRoot.SetActive(false);
@@ -102,7 +122,6 @@ public class SettingsPanel : MonoBehaviour
 
         _voiceEnabledToggle.onValueChanged.AddListener(b => OnVoiceEnabledChanged(b));
         _micDropdown.onValueChanged.AddListener(i => OnMicSelected(i));
-        _btnRetryAudioOutput.onClick.AddListener(OnRetryAudioOutputClicked);
 
         _btnSave.onClick.AddListener(OnSave);
         _btnCancel.onClick.AddListener(OnCancel);
@@ -152,6 +171,7 @@ public class SettingsPanel : MonoBehaviour
         _voiceEnabledToggle.SetIsOnWithoutNotify(sm.VoiceEnabled);
         PopulateMicDropdown(sm.MicDevice);
         RefreshMicStatusLabel(sm.MicDevice);
+        PopulateOutputDropdown();
         RefreshAudioOutputLabel();
     }
 
@@ -221,10 +241,32 @@ public class SettingsPanel : MonoBehaviour
         RefreshMicStatusLabel(device);
     }
 
-    void OnRetryAudioOutputClicked()
+    /// <summary>
+    /// Lista los dispositivos de salida disponibles. Es solo informativa: Unity no permite
+    /// elegir a cuál reproducir (siempre usa el default del SO), así que el label de abajo
+    /// (RefreshAudioOutputLabel) siempre muestra el dispositivo real en uso, sin importar
+    /// qué esté seleccionado acá.
+    /// </summary>
+    void PopulateOutputDropdown()
     {
-        SettingsManager.Instance.RetryAudioOutput();
-        RefreshAudioOutputLabel();
+        if (_outputDropdown == null) return;
+
+        string[] devices = SettingsManager.Instance.GetAvailableOutputDevices();
+        _outputDropdown.ClearOptions();
+
+        if (devices == null || devices.Length == 0)
+        {
+            _outputDropdown.AddOptions(new List<string> { LocalizationManager.Get("settings.voice.defaultMic") });
+            _outputDropdown.interactable = false;
+            return;
+        }
+
+        _outputDropdown.interactable = true;
+        _outputDropdown.AddOptions(new List<string>(devices));
+
+        string current = SettingsManager.Instance.DescribeAudioOutput();
+        int idx = System.Array.IndexOf(devices, current);
+        _outputDropdown.SetValueWithoutNotify(idx >= 0 ? idx : 0);
     }
 
     void RefreshAudioOutputLabel()

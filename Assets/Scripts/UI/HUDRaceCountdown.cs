@@ -60,7 +60,7 @@ public class HUDRaceCountdown : MonoBehaviour
         if (_panel == null) return;
 
         if (_messageText != null)
-            _messageText.text = finisherName + " termino la carrera!";
+            _messageText.text = string.Format(LocalizationManager.Get("race.finisherAnnounce"), finisherName);
 
         _endTime = Time.time + seconds;
         _running = true;
@@ -72,7 +72,7 @@ public class HUDRaceCountdown : MonoBehaviour
         if (_panel == null) return;
 
         if (_messageText != null)
-            _messageText.text = "Estas corriendo solo. Esperando reconexiones.";
+            _messageText.text = LocalizationManager.Get("race.aloneWaiting");
 
         _endTime = Time.time + seconds;
         _running = true;

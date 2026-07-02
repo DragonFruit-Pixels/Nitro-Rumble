@@ -53,7 +53,7 @@ MonoBehaviour:
     volume: 0.9
   uiClick:
     clip: {fileID: 8300000, guid: 20ba105f048e52b46af93d3588a89542, type: 3}
-    volume: 0.6
+    volume: 0.3
   engine:
     minPitch: 0.5
     maxPitch: 3
