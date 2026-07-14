@@ -17,10 +17,16 @@ public class LobbyHandler : MonoBehaviourPunCallbacks, ILobbyHandlerCommands
     [Header("Settings")]
     [SerializeField] private TrackCatalogueSO _trackCatalogue;
 
+    [Header("Navigation")]
+    [SerializeField] private Button _backToMenuButton;
+
     private void Awake()
     {
         foreach (LobbySubcategory sub in _lobbySubcategories)
             sub.Init(this);
+
+        if (_backToMenuButton != null)
+            _backToMenuButton.onClick.AddListener(RequestReturnToMainMenu);
     }
 
     private void Start()
@@ -122,6 +128,12 @@ public class LobbyHandler : MonoBehaviourPunCallbacks, ILobbyHandlerCommands
         if (MatchmakingManager.Instance)
             MatchmakingManager.Instance.RequestLeaveRoom();
     }
+
+    public void RequestReturnToMainMenu()
+    {
+        if (NetworkManager.Instance)
+            NetworkManager.Instance.RequestDisconnect();
+    }
 }
 
 public interface ILobbyHandlerCommands
@@ -132,6 +144,7 @@ public interface ILobbyHandlerCommands
     void LeftRoom();
     void RequestStartGame();
     void RequestLeaveRoom();
+    void RequestReturnToMainMenu();
 }
 
 public class LobbySubcategory : MonoBehaviourPunCallbacks

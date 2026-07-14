@@ -19,6 +19,7 @@ public class PowerUpBox : MonoBehaviour
 
     private Collider _trigger;
     private Vector3 _startLocalPosition;
+    private Quaternion _startLocalRotation;
     private bool _available = true;
 
     public int BoxId => _boxId;
@@ -36,6 +37,7 @@ public class PowerUpBox : MonoBehaviour
             _renderers = GetComponentsInChildren<Renderer>(true);
 
         _startLocalPosition = _visualRoot.localPosition;
+        _startLocalRotation = _visualRoot.localRotation;
 
         if (_boxMaterial != null)
             for (int i = 0; i < _renderers.Length; i++)
@@ -60,9 +62,14 @@ public class PowerUpBox : MonoBehaviour
         if (!_available || _visualRoot == null)
             return;
 
-        _visualRoot.Rotate(Vector3.up, _rotationSpeed * Time.deltaTime, Space.World);
-        _visualRoot.localPosition = _startLocalPosition + Vector3.up * (Mathf.Sin(Time.time * _bobSpeed) * _bobAmplitude);
-        UpdateColor();
+        // Ángulo absoluto derivado del reloj de red compartido (PhotonNetwork.Time) en vez de
+        // acumular rotación local por Time.deltaTime: así todos los clientes calculan exactamente
+        // el mismo ángulo en el mismo instante, sin necesitar PhotonView ni RPCs.
+        float t = (float)PhotonNetwork.Time;
+
+        _visualRoot.localRotation = _startLocalRotation * Quaternion.Euler(0f, (t * _rotationSpeed) % 360f, 0f);
+        _visualRoot.localPosition = _startLocalPosition + Vector3.up * (Mathf.Sin(t * _bobSpeed) * _bobAmplitude);
+        UpdateColor(t);
     }
 
     private void OnTriggerEnter(Collider other)
@@ -94,12 +101,12 @@ public class PowerUpBox : MonoBehaviour
 
     }
 
-    private void UpdateColor()
+    private void UpdateColor(float t)
     {
         if (_renderers == null)
             return;
 
-        Color color = Color.HSVToRGB(Mathf.Repeat(Time.time * _hueSpeed + _boxId * 0.17f, 1f), 0.65f, 1f);
+        Color color = Color.HSVToRGB(Mathf.Repeat(t * _hueSpeed + _boxId * 0.17f, 1f), 0.65f, 1f);
         color.a = 0.55f;
 
         for (int i = 0; i < _renderers.Length; i++)

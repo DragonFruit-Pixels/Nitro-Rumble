@@ -6,33 +6,12 @@ public class CarCamera : MonoBehaviour
     [Header("References")]
     [SerializeField] private CarController _target;
 
-    [Header("Follow")]
-    [SerializeField] private float _followSpeed  = 4f;
-    [SerializeField] private float _heightOffset = 3f;
-
-    [Header("Dynamic Zoom")]
-    [SerializeField] private float _minDistance = 8f;
-    [SerializeField] private float _maxDistance = 16f;
-    [SerializeField] private float _zoomSpeed   = 2f;
-
-    [Header("Look At")]
-    [SerializeField] private float _lookAheadOffset = 1.5f;
+    [Header("Tuning")]
+    [Tooltip("Asset con todos los valores de cámara (y manejo). Si queda vacío se carga Assets/Resources/CarTuning.asset.")]
+    [SerializeField] private CarTuningSO _tuning;
 
     [Header("Obstacle Avoidance")]
-    [SerializeField] private float     _clipPadding = 0.3f;
-    [SerializeField] private LayerMask _clipMask    = ~0;
-
-    [Header("Dynamic FOV")]
-    [SerializeField] private float _baseFov  = 60f;
-    [SerializeField] private float _maxFov   = 75f;
-    [SerializeField] private float _fovSpeed = 3f;
-
-    [Header("Camera Tilt")]
-    [SerializeField] private float _maxTilt  = 5f;
-    [SerializeField] private float _tiltSpeed = 4f;
-
-    [Header("Screen Shake")]
-    [SerializeField] private float _shakeDecay = 3.5f;
+    [SerializeField] private LayerMask _clipMask = ~0;
 
     private Camera _cam;
     private float  _currentDistance;
@@ -45,6 +24,8 @@ public class CarCamera : MonoBehaviour
 
     private void Awake()
     {
+        EnsureTuning();
+
         _cam = GetComponent<Camera>();
 
         int minimapLayer = LayerMask.NameToLayer("MinimapIcon");
@@ -56,10 +37,17 @@ public class CarCamera : MonoBehaviour
         _clipMask &= ~(1 << 2);
     }
 
+    // Garantiza que _tuning nunca sea null (asignado → Resources → instancia por defecto).
+    private void EnsureTuning()
+    {
+        if (_tuning == null) _tuning = Resources.Load<CarTuningSO>("CarTuning");
+        if (_tuning == null) _tuning = ScriptableObject.CreateInstance<CarTuningSO>();
+    }
+
     private void Start()
     {
-        _currentDistance = _minDistance;
-        if (_cam != null) _cam.fieldOfView = _baseFov;
+        _currentDistance = _tuning.MinDistance;
+        if (_cam != null) _cam.fieldOfView = _tuning.BaseFov;
         if (_target != null) SnapToTarget();
     }
 
@@ -84,41 +72,44 @@ public class CarCamera : MonoBehaviour
     private void UpdateDistance()
     {
         float normSpeed  = Mathf.Clamp01(Mathf.Abs(_target.Speed) / _target.MaxSpeed);
-        float targetDist = Mathf.Lerp(_minDistance, _maxDistance, normSpeed);
-        _currentDistance = Mathf.Lerp(_currentDistance, targetDist, Time.deltaTime * _zoomSpeed);
+        float targetDist = Mathf.Lerp(_tuning.MinDistance, _tuning.MaxDistance, normSpeed);
+        _currentDistance = Mathf.Lerp(_currentDistance, targetDist, Time.deltaTime * _tuning.ZoomSpeed);
     }
 
     private void UpdatePosition()
     {
         Transform car = _target.VisualTransform;
 
-        Vector3 origin    = car.position + Vector3.up * _heightOffset;
+        Vector3 origin    = car.position + Vector3.up * _tuning.HeightOffset;
         Vector3 direction = (-car.forward + Vector3.up * 0.15f).normalized;
         float   wantedDist = _currentDistance;
 
-        if (Physics.SphereCast(origin, _clipPadding, direction, out RaycastHit hit,
+        if (Physics.SphereCast(origin, _tuning.ClipPadding, direction, out RaycastHit hit,
                                wantedDist, _clipMask, QueryTriggerInteraction.Ignore))
-            wantedDist = Mathf.Max(hit.distance - _clipPadding, _clipPadding);
+            wantedDist = Mathf.Max(hit.distance - _tuning.ClipPadding, _tuning.ClipPadding);
 
         Vector3 targetPos = origin + direction * wantedDist + _shakeOffset;
 
-        transform.position = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * _followSpeed);
-        transform.LookAt(car.position + car.forward * _lookAheadOffset + Vector3.up);
+        transform.position = Vector3.Lerp(transform.position, targetPos, Time.deltaTime * _tuning.FollowSpeed);
+
+        Vector3 lookTarget = car.position + car.forward * _tuning.LookAheadOffset + Vector3.up;
+        Quaternion targetRotation = Quaternion.LookRotation(lookTarget - transform.position);
+        transform.rotation = Quaternion.Slerp(transform.rotation, targetRotation, Time.deltaTime * _tuning.RotationSpeed);
     }
 
     private void UpdateFov()
     {
         if (_cam == null) return;
         float normSpeed = Mathf.Clamp01(Mathf.Abs(_target.Speed) / _target.MaxSpeed);
-        float targetFov = Mathf.Lerp(_baseFov, _maxFov, normSpeed) + _turboBurst;
-        _cam.fieldOfView = Mathf.Lerp(_cam.fieldOfView, targetFov, Time.deltaTime * _fovSpeed);
+        float targetFov = Mathf.Lerp(_tuning.BaseFov, _tuning.MaxFov, normSpeed) + _turboBurst;
+        _cam.fieldOfView = Mathf.Lerp(_cam.fieldOfView, targetFov, Time.deltaTime * _tuning.FovSpeed);
         _turboBurst = Mathf.MoveTowards(_turboBurst, 0f, Time.deltaTime * 30f);
     }
 
     private void UpdateTilt()
     {
-        float targetTilt = -_target.SteerInput * _maxTilt;
-        _currentTilt = Mathf.Lerp(_currentTilt, targetTilt, Time.deltaTime * _tiltSpeed);
+        float targetTilt = -_target.SteerInput * _tuning.MaxTilt;
+        _currentTilt = Mathf.Lerp(_currentTilt, targetTilt, Time.deltaTime * _tuning.TiltSpeed);
 
         Vector3 euler = transform.eulerAngles;
         euler.z = _currentTilt;
@@ -130,13 +121,13 @@ public class CarCamera : MonoBehaviour
         if (_shakeIntensity <= 0f) { _shakeOffset = Vector3.zero; return; }
 
         _shakeOffset = Random.insideUnitSphere * _shakeIntensity;
-        _shakeIntensity = Mathf.MoveTowards(_shakeIntensity, 0f, Time.deltaTime * _shakeDecay);
+        _shakeIntensity = Mathf.MoveTowards(_shakeIntensity, 0f, Time.deltaTime * _tuning.ShakeDecay);
     }
 
     private void SnapToTarget()
     {
         Transform car = _target.VisualTransform;
-        transform.position = car.position - car.forward * _minDistance + Vector3.up * _heightOffset;
+        transform.position = car.position - car.forward * _tuning.MinDistance + Vector3.up * _tuning.HeightOffset;
         transform.LookAt(car.position + Vector3.up);
     }
 

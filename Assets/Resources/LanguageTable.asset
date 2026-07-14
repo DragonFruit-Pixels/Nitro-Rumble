@@ -181,6 +181,10 @@ MonoBehaviour:
     translations:
     - CREAR
     - CREATE
+  - key: lobby.backToMenu
+    translations:
+    - Volver al Menu
+    - Back to Menu
   - key: inroom.playerList
     translations:
     - Lista de Jugadores

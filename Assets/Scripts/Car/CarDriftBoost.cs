@@ -18,6 +18,10 @@ public class CarDriftBoost : MonoBehaviourPun
     [SerializeField, Range(0f, 1f)] private float _driftAccelerationMultiplier = 0.6f;
     [SerializeField] private float _driftForwardDrag = 0.45f;
     [SerializeField] private float _driftLateralDrag = 0.15f;
+
+    [Header("Normal Grip (fuera del drift)")]
+    [Tooltip("Drag lateral aplicado cuando NO se está drifteando, para que el auto no resbale como en hielo en curvas normales.")]
+    [SerializeField] private float _normalGripLateralDrag = 8f;
     [SerializeField] private float _chargeTimeForMaxBoost = 2.2f;
     [SerializeField] private float _levelOneThreshold = 0.32f;
     [SerializeField] private float _levelTwoThreshold = 0.66f;
@@ -81,6 +85,8 @@ public class CarDriftBoost : MonoBehaviourPun
 
         if (_isDriftButtonHeld)
             _controller.ApplyDriftVelocityDrag(_driftForwardDrag, _driftLateralDrag);
+        else
+            _controller.ApplyDriftVelocityDrag(0f, _normalGripLateralDrag);
 
         if (_isBoosting)
             ApplyBoostForce();

@@ -8,10 +8,9 @@ public class CarController : MonoBehaviourPun
     [SerializeField] private Transform _container;
     [SerializeField] private float     _containerOffset = 0.65f;
 
-    [Header("Movement")]
-    [SerializeField] private float _accelerationForce = 35f;
-    [SerializeField] private float _idleVelocityDamping = 8f;
-    [SerializeField] private float _idleStopSpeed = 0.15f;
+    [Header("Tuning")]
+    [Tooltip("Asset con todos los valores de manejo (y cámara). Si queda vacío se carga Assets/Resources/CarTuning.asset.")]
+    [SerializeField] private CarTuningSO _tuning;
 
     [Header("Ground Detection")]
     [SerializeField] private float     _groundRayDistance = 0.7f;
@@ -24,7 +23,7 @@ public class CarController : MonoBehaviourPun
     public float SteerInput    { get; private set; }
     public bool  IsGrounded    { get; private set; }
     public bool  IsDrifting    { get; private set; }
-    public float MaxSpeed      => 20f;
+    public float MaxSpeed      => _tuning.MaxSpeed;
     public Transform VisualTransform => _container;
     public Rigidbody PhysicsBody => _sphere;
     public bool CanMove
@@ -63,6 +62,8 @@ public class CarController : MonoBehaviourPun
 
     private void Awake()
     {
+        EnsureTuning();
+
         if (_sphere != null)
         {
             _sphere.interpolation = RigidbodyInterpolation.Interpolate;
@@ -70,6 +71,14 @@ public class CarController : MonoBehaviourPun
         }
 
         EnsureRuntimeComponents();
+    }
+
+    // Garantiza que _tuning nunca sea null: usa el asignado, si no el de Resources, y como último
+    // recurso una instancia con los valores por defecto del SO. Así el código puede leer _tuning.* sin chequear.
+    private void EnsureTuning()
+    {
+        if (_tuning == null) _tuning = Resources.Load<CarTuningSO>("CarTuning");
+        if (_tuning == null) _tuning = ScriptableObject.CreateInstance<CarTuningSO>();
     }
 
     private void Start()
@@ -209,27 +218,51 @@ public class CarController : MonoBehaviourPun
 
     private void HandleInput()
     {
-        if (!CanMove) return;
+        // Sin control de motor en el aire: se conserva la inercia (no se empuja ni frena volando).
+        if (!CanMove || !IsGrounded) return;
 
-        _sphere.AddForce(_container.forward * _linearSpeed * _accelerationForce * _driftAccelerationMultiplier, ForceMode.Acceleration);
+        float forwardSpeed = Vector3.Dot(_sphere.velocity, _container.forward);
+        float throttle     = ThrottleInput;
 
-        if (!IsGrounded) return;
+        // ── Dirección ──────────────────────────────────────────────────────────────
+        // El agarre de giro crece con la velocidad (mínimo 0.2 para poder maniobrar casi detenido).
+        float normSpeed    = Mathf.Clamp01(Mathf.Abs(forwardSpeed) / _tuning.MaxSpeed);
+        float steeringGrip = Mathf.Clamp(normSpeed, 0.2f, 1f);
+        float direction    = forwardSpeed < -0.1f ? -1f : 1f; // en reversa, el volante se invierte
+        float targetAngular = SteerInput * steeringGrip * _tuning.MaxTurnRate * direction * _driftSteeringMultiplier;
+        _angularSpeed = Mathf.Lerp(_angularSpeed, targetAngular, Time.fixedDeltaTime * _tuning.SteerResponse);
 
-        float direction = Mathf.Sign(_linearSpeed);
-        if (direction == 0f)
-            direction = Mathf.Abs(ThrottleInput) > 0.1f ? Mathf.Sign(ThrottleInput) : 1f;
-
-        float steeringGrip = Mathf.Clamp(Mathf.Abs(_linearSpeed), 0.2f, 1.0f);
-        float targetAngular = SteerInput * steeringGrip * 4f * direction * _driftSteeringMultiplier;
-        _angularSpeed = Mathf.Lerp(_angularSpeed, targetAngular, Time.fixedDeltaTime * 4f);
-
-        float targetSpeed = ThrottleInput;
-        if (targetSpeed < 0f && _linearSpeed > 0.01f)
-            _linearSpeed = Mathf.Lerp(_linearSpeed, 0f,               Time.fixedDeltaTime * 8f);
-        else if (targetSpeed < 0f)
-            _linearSpeed = Mathf.Lerp(_linearSpeed, targetSpeed * 0.5f, Time.fixedDeltaTime * 2f);
-        else
-            _linearSpeed = Mathf.Lerp(_linearSpeed, targetSpeed,       Time.fixedDeltaTime * 6f);
+        // ── Acelerar / Frenar / Costear ──────────────────────────────────────────────
+        if (throttle > 0.05f)
+        {
+            // Fuerza proporcional al acelerador, atenuada al acercarse a la velocidad máxima.
+            // Así el tope es un equilibrio natural (fuerza→0) en vez de un corte brusco.
+            float speedRatio = Mathf.Clamp01(forwardSpeed / _tuning.MaxSpeed);
+            float accel = _tuning.AccelerationForce * throttle * (1f - speedRatio) * _driftAccelerationMultiplier;
+            _sphere.AddForce(_container.forward * accel, ForceMode.Acceleration);
+        }
+        else if (throttle < -0.05f)
+        {
+            if (forwardSpeed > 0.5f)
+            {
+                // Freno activo mientras se avanza.
+                _sphere.AddForce(-_container.forward * _tuning.BrakeForce, ForceMode.Acceleration);
+            }
+            else
+            {
+                // Marcha atrás, con su propio tope de velocidad.
+                float reverseRatio = Mathf.Clamp01(-forwardSpeed / _tuning.ReverseMaxSpeed);
+                float accel = _tuning.AccelerationForce * throttle * (1f - reverseRatio);
+                _sphere.AddForce(_container.forward * accel, ForceMode.Acceleration);
+            }
+        }
+        else if (Mathf.Abs(forwardSpeed) > 0.1f)
+        {
+            // Coast: resistencia de rodadura suave. El auto desacelera de a poco conservando inercia,
+            // sin frenar en seco. Se limita para no invertir la velocidad en un solo frame.
+            float decel = Mathf.Min(_tuning.CoastDecel, Mathf.Abs(forwardSpeed) / Time.fixedDeltaTime);
+            _sphere.AddForce(-Mathf.Sign(forwardSpeed) * _container.forward * decel, ForceMode.Acceleration);
+        }
     }
 
     private void ApplySteering()
@@ -263,26 +296,24 @@ public class CarController : MonoBehaviourPun
         if (Mathf.Abs(ThrottleInput) > 0.05f)
             return;
 
+        // La desaceleración al soltar el gas ya la maneja el "coast" (resistencia de rodadura) en HandleInput.
+        // Acá solo cortamos el deslizamiento residual cuando el auto ya está casi detenido, para que no
+        // quede reptando eternamente. NO frenamos activamente a velocidades normales (eso era el bug).
         Vector3 horizontalVelocity = Vector3.ProjectOnPlane(_sphere.velocity, _groundNormal);
-        Vector3 dampedHorizontal = Vector3.Lerp(
-            horizontalVelocity,
-            Vector3.zero,
-            Time.fixedDeltaTime * _idleVelocityDamping
-        );
-
-        Vector3 verticalVelocity = _sphere.velocity - horizontalVelocity;
-        _sphere.velocity = verticalVelocity + dampedHorizontal;
-
-        if (dampedHorizontal.magnitude < _idleStopSpeed)
-            _sphere.velocity = verticalVelocity;
+        if (horizontalVelocity.magnitude < _tuning.IdleStopSpeed)
+            _sphere.velocity -= horizontalVelocity;
     }
 
     private void UpdateSpeed()
     {
         Speed = Vector3.Dot(_sphere.velocity, _container.forward);
-        LinearSpeed = _linearSpeed;
-        float angularBonus = Mathf.Abs(_sphere.angularVelocity.magnitude * _linearSpeed) / 100f;
-        _acceleration = Mathf.Lerp(_acceleration, _linearSpeed + angularBonus, Time.fixedDeltaTime * 1f);
+
+        // LinearSpeed normalizado (-1..1) ahora deriva de la velocidad REAL del auto, no de un
+        // seguidor del acelerador. Lo consumen CarVisuals (ruedas/lean), CarStretchSquash y CarNetworkSync.
+        _linearSpeed = Mathf.Clamp(Speed / _tuning.MaxSpeed, -1f, 1f);
+        LinearSpeed  = _linearSpeed;
+
+        _acceleration = Mathf.Lerp(_acceleration, _linearSpeed, Time.fixedDeltaTime * 3f);
         Acceleration  = _acceleration;
     }
 

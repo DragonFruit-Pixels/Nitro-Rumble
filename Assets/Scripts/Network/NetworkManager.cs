@@ -47,6 +47,16 @@ public class NetworkManager : PunSingleton<NetworkManager>
         if (PhotonNetwork.IsConnected)
             PhotonNetwork.JoinLobby(TypedLobby.Default);
     }
+
+    /// <summary>
+    /// Desconecta de Photon por completo (no solo deja la sala). OnDisconnected lleva
+    /// el status a Offline, y GameSceneManager reacciona cargando Menu.unity.
+    /// </summary>
+    public void RequestDisconnect()
+    {
+        if (PhotonNetwork.IsConnected)
+            PhotonNetwork.Disconnect();
+    }
     
     public override void OnConnectedToMaster()
     {
