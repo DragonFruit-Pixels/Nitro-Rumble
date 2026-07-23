@@ -121,3 +121,36 @@ Compilación verificada sin errores (0 errores, solo warnings preexistentes no r
 - Voz entre dos clientes + que el ícono prenda/apague correctamente.
 - Que el stretch/squash se vea bien (ángulo correcto, no exagerado) y sincronizado en el auto remoto.
 - Que los power-up boxes roten exactamente igual en ambas ventanas.
+
+## Follow-up (2026-07-22): el squash seguía casi invisible en manejo normal
+
+El profesor pidió la animación de las cajas al ver que la de los autos (squash/stretch) no
+se notaba. Investigando con Unity MCP en vivo se encontraron **2 causas raíz** en
+`CarStretchSquash.ComputeLocalTarget()`, que corría dentro de `Update()`:
+
+1. **Cadencia equivocada**: `CarController.LinearSpeed` solo cambia en `FixedUpdate`
+   (`UpdateSpeed()`), pero la derivada de aceleración se calculaba en `Update()` usando
+   `Time.deltaTime` — en la mayoría de los frames de render `speed == _prevSpeed` (accel = 0),
+   con un pico esporádico que el `Lerp` de suavizado (`_squashResponse = 10`) casi anulaba.
+2. **Constante desactualizada**: `LinearSpeed` está normalizado a `-1..1` (ver comentario en
+   `CarController.cs`: "ahora deriva de la velocidad REAL... no de un ratio"). `_accelScale
+   = 0.04` quedó pensado para una escala anterior — con la normalización, acelerar/frenar
+   normal daba un target de squash de ~0.02-0.05, invisible. Solo el boost se notaba porque
+   tiene un piso fijo (`_boostStretch`) independiente de este cálculo.
+
+**Fix:**
+- `CarStretchSquash.cs`: el cálculo de la derivada se movió a un `FixedUpdate()` propio
+  (usa `Time.fixedDeltaTime`, coincide con la cadencia real de `LinearSpeed`). `Update()`
+  ahora solo lee el target ya calculado (`_localTarget` si es local, `_remoteSquash` si no)
+  y aplica el `Lerp` + escala visual, sin recalcular nada.
+- `Car.prefab`: `_accelScale` subido de `0.04` a `0.5`.
+- Validado con la tuning real del auto vía reflection en vivo (`AccelerationForce=30,
+  BrakeForce=45, CoastDecel=6, MaxSpeed=20`): a full throttle desde parado el target da
+  ~0.75 (bien visible), frenada fuerte clampea a -1 (aplastado completo), coast sin throttle
+  da ~-0.15 (sutil, esperado — no hay frenada real). Números sanos, ni invisible ni exagerado.
+- Cajas de power-up: re-confirmadas correctas, sin cambios — `PowerUpBox.cs` ya usa
+  `PhotonNetwork.Time` (fix #6 arriba) y el prefab tiene todo bien wireado.
+
+Compilación verificada sin errores (Unity MCP, `read_console` limpio). Pendiente: manejar el
+auto con input real (teclado) en Play Mode para confirmar la sensación final del squash — el
+número `_accelScale = 0.5` es un punto de partida razonable, ajustable a ojo en el Inspector.

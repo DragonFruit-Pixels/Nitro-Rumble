@@ -125,7 +125,7 @@ public class SpeedEffectsOverlay : MonoBehaviour
         foreach (var car in FindObjectsOfType<CarController>())
         {
             var pv = car.GetComponent<PhotonView>() ?? car.GetComponentInParent<PhotonView>();
-            if (PhotonViewAuthority.HasLocalInputAuthority(pv))
+            if (PhotonViewAuthority.IsLocalHumanRacer(pv))
             {
                 _car = car;
                 return;

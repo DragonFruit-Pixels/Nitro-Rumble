@@ -59,12 +59,13 @@ public class MatchmakingManager : PunSingleton<MatchmakingManager>
             PlayerTtl    = 10000, // ms — mantiene el slot del jugador reservado tras desconexión (ReconnectAndRejoin)
             EmptyRoomTtl = 15000, // ms — mantiene la sala viva 15 s si caen TODOS, para permitir reconexión sin perderla
             // Exponer laps y raceCount al Lobby para que RoomObject los muestre
-            CustomRoomPropertiesForLobby = new[] { Keys.LAPS_KEY, Keys.RACE_COUNT_KEY },
+            CustomRoomPropertiesForLobby = new[] { Keys.LAPS_KEY, Keys.RACE_COUNT_KEY, Keys.BOTS_COUNT_KEY },
             CustomRoomProperties = new Hashtable
             {
                 { Keys.LAPS_KEY,       3 },
                 { Keys.RACE_COUNT_KEY, 5 },
-                { Keys.MAP_POOL_KEY,   new int[0] }
+                { Keys.MAP_POOL_KEY,   new int[0] },
+                { Keys.BOTS_COUNT_KEY, 0 }
             }
         };
 

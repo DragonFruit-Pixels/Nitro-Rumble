@@ -23,10 +23,16 @@ public class RoomConfigPanel : LobbySubcategory
     [SerializeField] private Button   _racesUp;
     [SerializeField] private TMP_Text _racesLabel;
 
+    [Header("Bots")]
+    [SerializeField] private Button   _botsDown;
+    [SerializeField] private Button   _botsUp;
+    [SerializeField] private TMP_Text _botsLabel;
+
     [Header("Resumen")]
     [SerializeField] private TMP_Text _summaryLabel;
 
     private int                               _raceCount = 5;
+    private int                               _botsCount = 0;
     private readonly HashSet<int>             _pool      = new();
     private readonly List<(TrackSO Track, Toggle Toggle, GameObject Go)> _toggles = new();
     private bool                              _anyTogglesSpawnedYet;
@@ -43,6 +49,8 @@ public class RoomConfigPanel : LobbySubcategory
         base.OnEnable();
         if (_racesDown != null) _racesDown.onClick.AddListener(() => ChangeRaces(-1));
         if (_racesUp   != null) _racesUp.onClick.AddListener(()   => ChangeRaces(+1));
+        if (_botsDown  != null) _botsDown.onClick.AddListener(()  => ChangeBots(-1));
+        if (_botsUp    != null) _botsUp.onClick.AddListener(()    => ChangeBots(+1));
 
         // LiveOps: si la config cambia mientras el panel está abierto (poll del dashboard,
         // resume desde background, etc.), reconstruir la lista de mapas disponibles.
@@ -57,6 +65,8 @@ public class RoomConfigPanel : LobbySubcategory
         base.OnDisable();
         if (_racesDown != null) _racesDown.onClick.RemoveAllListeners();
         if (_racesUp   != null) _racesUp.onClick.RemoveAllListeners();
+        if (_botsDown  != null) _botsDown.onClick.RemoveAllListeners();
+        if (_botsUp    != null) _botsUp.onClick.RemoveAllListeners();
 
         if (LiveOpsConfig.Instance != null)
             LiveOpsConfig.Instance.OnConfigApplied -= OnLiveOpsConfigApplied;
@@ -169,7 +179,7 @@ public class RoomConfigPanel : LobbySubcategory
 
     // ── Steppers ────────────────────────────────────────────────────────────────
 
-    private void ChangeRaces(int delta)
+private void ChangeRaces(int delta)
     {
         if (!PhotonNetwork.IsMasterClient) return;
         _raceCount = Mathf.Clamp(_raceCount + delta, 1, 10);
@@ -178,14 +188,33 @@ public class RoomConfigPanel : LobbySubcategory
         RefreshSummary();
     }
 
-    private void RefreshStepperLabels()
+private void ChangeBots(int delta)
+    {
+        if (!PhotonNetwork.IsMasterClient) return;
+        // Tope de 3: deja lugar para al menos 1 humano en una sala de 4.
+        _botsCount = Mathf.Clamp(_botsCount + delta, 0, 3);
+        RefreshStepperLabels();
+        PushToRoomProperties();
+        RefreshSummary();
+
+        // El Master Client no recibe el round-trip de Room Custom Properties tan rapido como
+        // el resto (PUN no actualiza el cache local ni dispara OnRoomPropertiesUpdate para quien
+        // hizo el cambio hasta que el evento vuelve del servidor) - reflejamos el cambio en la
+        // lista de jugadores de una, en vez de esperarlo.
+        InRoomHandler inRoomHandler = FindObjectOfType<InRoomHandler>();
+        if (inRoomHandler != null)
+            inRoomHandler.NotifyBotsCountChanged(_botsCount);
+    }
+
+private void RefreshStepperLabels()
     {
         if (_racesLabel != null) _racesLabel.text = _raceCount.ToString();
+        if (_botsLabel  != null) _botsLabel.text  = _botsCount.ToString();
     }
 
     // ── Room Properties ─────────────────────────────────────────────────────────
 
-    private void PushToRoomProperties()
+private void PushToRoomProperties()
     {
         if (!PhotonNetwork.InRoom || !PhotonNetwork.IsMasterClient) return;
 
@@ -197,18 +226,24 @@ public class RoomConfigPanel : LobbySubcategory
         {
             { Keys.LAPS_KEY,       3 },          // siempre 3, no configurable
             { Keys.RACE_COUNT_KEY, _raceCount },
-            { Keys.MAP_POOL_KEY,   poolArray }
+            { Keys.MAP_POOL_KEY,   poolArray },
+            { Keys.BOTS_COUNT_KEY, _botsCount }
         };
         PhotonNetwork.CurrentRoom.SetCustomProperties(props);
     }
 
-    private void SyncFromProps(Hashtable props)
+private void SyncFromProps(Hashtable props)
     {
         bool changed = false;
 
         if (props.TryGetValue(Keys.RACE_COUNT_KEY, out object rc) && rc is int raceCount)
         {
             _raceCount = raceCount;
+            changed = true;
+        }
+        if (props.TryGetValue(Keys.BOTS_COUNT_KEY, out object bc) && bc is int botsCount)
+        {
+            _botsCount = botsCount;
             changed = true;
         }
         if (props.TryGetValue(Keys.MAP_POOL_KEY, out object p) && p is int[] pool)
@@ -227,12 +262,14 @@ public class RoomConfigPanel : LobbySubcategory
         RefreshSummary();
     }
 
-    private void RefreshInteractable()
+private void RefreshInteractable()
     {
         bool host = PhotonNetwork.IsMasterClient;
 
         if (_racesDown != null) _racesDown.interactable = host;
         if (_racesUp   != null) _racesUp.interactable   = host;
+        if (_botsDown  != null) _botsDown.interactable  = host;
+        if (_botsUp    != null) _botsUp.interactable    = host;
 
         foreach (var entry in _toggles)
             if (entry.Toggle != null) entry.Toggle.interactable = host;

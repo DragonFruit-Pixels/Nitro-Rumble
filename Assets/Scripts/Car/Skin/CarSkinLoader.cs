@@ -40,6 +40,16 @@ public class CarSkinLoader : MonoBehaviourPun
 
     private void LoadSkin()
     {
+        // Los bots no tienen Player propio (su Owner es el Master Client), asi que la
+        // rama de abajo leeria el selectedSkin del MC. Si trae skin propia via
+        // instantiationData, se aplica directo y listo: no hay Player detras a quien
+        // sincronizarle Custom Properties.
+        if (TryGetBotSkinID(out int botSkinID))
+        {
+            RPC_LoadSkin(botSkinID);
+            return;
+        }
+
         if (PhotonNetwork.IsConnected && PhotonNetwork.InRoom)
         {
             if (PhotonViewAuthority.HasLocalInputAuthority(photonView))
@@ -112,6 +122,19 @@ public class CarSkinLoader : MonoBehaviourPun
         // Ningún skin del catálogo está disponible (caso extremo de config mal hecha).
         // Fail-open: se deja la skin actual puesta para no romper el auto visualmente.
         Logger.LogWarning("[LiveOps] Ninguna skin disponible en el catálogo; se mantiene la actual.");
+    }
+
+    private bool TryGetBotSkinID(out int skinID)
+    {
+        skinID = 0;
+        object[] data = photonView != null ? photonView.InstantiationData : null;
+        bool isBot = data != null && data.Length > 0 && data[0] is bool b && b;
+        if (isBot && data.Length > 2 && data[2] is int id)
+        {
+            skinID = id;
+            return true;
+        }
+        return false;
     }
 
     [PunRPC]

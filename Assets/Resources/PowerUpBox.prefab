@@ -63,10 +63,12 @@ MonoBehaviour:
   _visualRoot: {fileID: 4185261014228670402}
   _boxMaterial: {fileID: 2100000, guid: 8419dae51707e4d4f95b44f729d070f4, type: 2}
   _renderers: []
-  _rotationSpeed: 90
-  _bobAmplitude: 0.25
-  _bobSpeed: 2.5
-  _hueSpeed: 0.25
+  _rotationSpeed: 200
+  _bobAmplitude: 0.45
+  _bobSpeed: 4
+  _hueSpeed: 0.4
+  _squashAmount: 0.35
+  _squashSpeed: 4.5
 --- !u!1 &6754944056058510533
 GameObject:
   m_ObjectHideFlags: 0

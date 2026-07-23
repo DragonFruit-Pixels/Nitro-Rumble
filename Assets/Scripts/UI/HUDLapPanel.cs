@@ -22,7 +22,7 @@ public class HUDLapPanel : MonoBehaviour
         foreach (Racer r in FindObjectsOfType<Racer>())
         {
             var pv = r.GetComponent<Photon.Pun.PhotonView>();
-            if (PhotonViewAuthority.HasLocalInputAuthority(pv))
+            if (PhotonViewAuthority.IsLocalHumanRacer(pv))
             {
                 _localRacer = r;
                 break;

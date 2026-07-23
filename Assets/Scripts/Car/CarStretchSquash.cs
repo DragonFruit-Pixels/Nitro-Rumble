@@ -31,6 +31,7 @@ public class CarStretchSquash : MonoBehaviour
     private PhotonView _photonView;
     private Vector3    _baseScale;
     private float      _prevSpeed;
+    private float      _localTarget;   // target de squash calculado en FixedUpdate (ver comentario ahi)
     private float      _currentSquash; // -1 (aplastado) .. +1 (estirado), suavizado
     private float      _remoteSquash;
 
@@ -54,17 +55,22 @@ public class CarStretchSquash : MonoBehaviour
     {
         if (_squashTarget == null) return;
 
-        float target = IsLocal ? ComputeLocalTarget() : _remoteSquash;
+        float target = IsLocal ? _localTarget : _remoteSquash;
 
         _currentSquash = Mathf.Lerp(_currentSquash, target, Time.deltaTime * _squashResponse);
         ApplyScale(_currentSquash);
     }
 
-    // Squash objetivo del dueño: derivado de la aceleración (derivada de la velocidad) + boost.
-    private float ComputeLocalTarget()
+    // LinearSpeed solo cambia en FixedUpdate (CarController.UpdateSpeed), por eso la derivada
+    // de aceleracion tambien se calcula aca con Time.fixedDeltaTime. Calcularla en Update()
+    // con Time.deltaTime daba lecturas erraticas: la mayoria de los frames ven la misma
+    // velocidad (accel = 0), con un pico esporadico que el Lerp de suavizado casi anulaba.
+    private void FixedUpdate()
     {
+        if (!IsLocal) return;
+
         float speed = _controller != null ? _controller.LinearSpeed : 0f;
-        float accel = (speed - _prevSpeed) / Mathf.Max(Time.deltaTime, 1e-4f);
+        float accel = (speed - _prevSpeed) / Time.fixedDeltaTime;
         _prevSpeed = speed;
 
         float target = Mathf.Clamp(accel * _accelScale, -1f, 1f);
@@ -72,7 +78,7 @@ public class CarStretchSquash : MonoBehaviour
         if (_driftBoost != null && _driftBoost.IsBoosting)
             target = Mathf.Max(target, _boostStretch);
 
-        return target;
+        _localTarget = target;
     }
 
     // s > 0 → estira en Z y adelgaza lateral; s < 0 → aplasta (invierte).

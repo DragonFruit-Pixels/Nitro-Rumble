@@ -22,7 +22,7 @@ public class MinimapIcon : MonoBehaviour
         transform.localScale = Vector3.one * _size;
 
         PhotonView pv = GetComponentInParent<PhotonView>();
-        bool isLocal  = PhotonViewAuthority.HasLocalInputAuthority(pv);
+        bool isLocal  = PhotonViewAuthority.IsLocalHumanRacer(pv);
 
         Color color;
         if (isLocal)

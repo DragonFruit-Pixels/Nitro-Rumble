@@ -16,11 +16,25 @@ public class PowerUpBox : MonoBehaviour
     [SerializeField] private float _bobAmplitude = 0.25f;
     [SerializeField] private float _bobSpeed = 2.5f;
     [SerializeField] private float _hueSpeed = 0.25f;
+    [Tooltip("Amplitud del pulso de squash (fraccion de la escala base).")]
+    [SerializeField] private float _squashAmount = 0.15f;
+    [Tooltip("Velocidad del ciclo de squash.")]
+    [SerializeField] private float _squashSpeed = 3f;
 
     private Collider _trigger;
     private Vector3 _startLocalPosition;
+    private Vector3 _startLocalScale;
     private Quaternion _startLocalRotation;
     private bool _available = true;
+
+    // Suaviza PhotonNetwork.Time antes de usarlo en la animacion: el reloj de red hace
+    // pequenas correcciones (ping/drift) que a velocidades de rotacion/squash bajas eran
+    // invisibles, pero con los valores exagerados quedan como un salto/lag perceptible.
+    // El reloj local avanza solo (Time.deltaTime, siempre fluido) y se re-sincroniza de a
+    // poco hacia el tiempo de red real, en vez de saltar directo a el cada frame.
+    private const float TimeSyncSpeed = 3f;
+    private static float _sSmoothedTime;
+    private static int   _sSmoothedFrame = -1;
 
     public int BoxId => _boxId;
     public bool Available => _available;
@@ -38,6 +52,7 @@ public class PowerUpBox : MonoBehaviour
 
         _startLocalPosition = _visualRoot.localPosition;
         _startLocalRotation = _visualRoot.localRotation;
+        _startLocalScale    = _visualRoot.localScale;
 
         if (_boxMaterial != null)
             for (int i = 0; i < _renderers.Length; i++)
@@ -62,17 +77,41 @@ public class PowerUpBox : MonoBehaviour
         if (!_available || _visualRoot == null)
             return;
 
-        // Ángulo absoluto derivado del reloj de red compartido (PhotonNetwork.Time) en vez de
-        // acumular rotación local por Time.deltaTime: así todos los clientes calculan exactamente
-        // el mismo ángulo en el mismo instante, sin necesitar PhotonView ni RPCs.
-        float t = (float)PhotonNetwork.Time;
+        // Angulo/posicion/squash absolutos derivados del reloj de red compartido (PhotonNetwork.Time)
+        // en vez de acumular por Time.deltaTime: todos los clientes calculan exactamente el mismo
+        // valor en el mismo instante, sin necesitar PhotonView ni RPCs.
+        float t = GetSmoothedNetworkTime();
 
         _visualRoot.localRotation = _startLocalRotation * Quaternion.Euler(0f, (t * _rotationSpeed) % 360f, 0f);
         _visualRoot.localPosition = _startLocalPosition + Vector3.up * (Mathf.Sin(t * _bobSpeed) * _bobAmplitude);
+
+        float squash = Mathf.Sin(t * _squashSpeed) * _squashAmount;
+        Vector3 scale = _startLocalScale;
+        scale.y *= 1f + squash;
+        float lateral = 1f - squash * 0.5f; // pseudo-conservacion de volumen
+        scale.x *= lateral;
+        scale.z *= lateral;
+        _visualRoot.localScale = scale;
+
         UpdateColor(t);
     }
 
-    private void OnTriggerEnter(Collider other)
+    private static float GetSmoothedNetworkTime()
+    {
+        int frame = Time.frameCount;
+        if (frame == _sSmoothedFrame)
+            return _sSmoothedTime;
+
+        float networkTime = (float)PhotonNetwork.Time;
+        _sSmoothedTime = _sSmoothedFrame < 0
+            ? networkTime
+            : Mathf.Lerp(_sSmoothedTime + Time.deltaTime, networkTime, Time.deltaTime * TimeSyncSpeed);
+        _sSmoothedFrame = frame;
+        return _sSmoothedTime;
+    }
+
+    
+private void OnTriggerEnter(Collider other)
     {
         if (!_available)
             return;

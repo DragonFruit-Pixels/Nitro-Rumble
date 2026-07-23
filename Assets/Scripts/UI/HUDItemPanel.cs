@@ -31,7 +31,7 @@ public class HUDItemPanel : MonoBehaviour
         foreach (PowerUpInventory inv in FindObjectsOfType<PowerUpInventory>())
         {
             var pv = inv.GetComponent<Photon.Pun.PhotonView>();
-            if (PhotonViewAuthority.HasLocalInputAuthority(pv))
+            if (PhotonViewAuthority.IsLocalHumanRacer(pv))
             {
                 _inventory = inv;
                 Refresh(PowerUpType.None);

@@ -46,6 +46,14 @@ public class RaceResultReporter : MonoBehaviour
             return;
         }
 
+        // Partida solo-humano-vs-bots: no cuenta para el registro de tiempo online.
+        if (RaceManager.Instance != null && RaceManager.Instance.RealPlayerCountAtStart <= 1)
+        {
+            _reported = true;
+            Logger.Log("[RaceResultReporter] Partida solo vs. bots — no se sube resultado al leaderboard.");
+            return;
+        }
+
         Racer local = FindLocalRacer();
         if (local == null)
         {
@@ -71,7 +79,7 @@ public class RaceResultReporter : MonoBehaviour
 
         foreach (var racer in RaceManager.Instance.GetRacers())
         {
-            bool isLocal = PhotonViewAuthority.HasLocalInputAuthority(racer.photonView);
+            bool isLocal = PhotonViewAuthority.IsLocalHumanRacer(racer.photonView);
             if (isLocal) return racer;
         }
         return null;

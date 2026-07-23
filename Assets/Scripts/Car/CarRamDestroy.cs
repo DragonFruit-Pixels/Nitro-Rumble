@@ -33,6 +33,12 @@ public class CarRamDestroy : MonoBehaviourPun
     private bool IsLocal =>
         PhotonViewAuthority.HasLocalInputAuthority(photonView);
 
+    // Para el panel de revive: "es MI auto", no "tengo autoridad de red sobre esto".
+    // El Master Client tiene autoridad sobre sus bots, pero el panel de revive del
+    // bot no debe aparecer en la pantalla del MC — ver PhotonViewAuthority.IsLocalHumanRacer.
+    private bool IsLocalHuman =>
+        PhotonViewAuthority.IsLocalHumanRacer(photonView);
+
     #region Unity
 
     private void Awake()
@@ -94,8 +100,8 @@ public class CarRamDestroy : MonoBehaviourPun
         if (_controller?.VisualTransform != null)
             _controller.VisualTransform.gameObject.SetActive(false);
 
-        // 3. Revive UI (solo cliente local)
-        if (IsLocal)
+        // 3. Revive UI (solo mi propio auto, nunca el de un bot que yo controle)
+        if (IsLocalHuman)
         {
             if (_revivePanel == null)
                 _revivePanel = FindObjectOfType<ReviveUIPanel>(true);
@@ -106,7 +112,7 @@ public class CarRamDestroy : MonoBehaviourPun
         float remaining = _reviveTime;
         while (remaining > 0f)
         {
-            if (IsLocal)
+            if (IsLocalHuman)
             {
                 if (_revivePanel == null)
                     _revivePanel = FindObjectOfType<ReviveUIPanel>(true);
@@ -148,7 +154,7 @@ public class CarRamDestroy : MonoBehaviourPun
             _controller.VisualTransform.gameObject.SetActive(true);
 
         // 7. Ocultar UI
-        if (IsLocal)
+        if (IsLocalHuman)
             _revivePanel?.Hide();
 
         _isDestroyed = false;

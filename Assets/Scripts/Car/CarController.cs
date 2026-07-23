@@ -49,6 +49,7 @@ public class CarController : MonoBehaviourPun
     private float _driftSteeringMultiplier = 1f;
     private float _driftAccelerationMultiplier = 1f;
     private bool _canMove;
+    private CarBotDriver _botDriver;
 
     private Vector3 _groundNormal = Vector3.up;
     private bool    _wasGrounded;
@@ -71,6 +72,7 @@ public class CarController : MonoBehaviourPun
         }
 
         EnsureRuntimeComponents();
+        _botDriver = GetComponent<CarBotDriver>();
     }
 
     // Garantiza que _tuning nunca sea null: usa el asignado, si no el de Resources, y como último
@@ -90,8 +92,17 @@ public class CarController : MonoBehaviourPun
     {
         if (!CanMove) return;
         if (!IsLocalAuthority) return;
-        ThrottleInput = Input.GetAxis("Vertical");
-        SteerInput    = Input.GetAxis("Horizontal");
+
+        if (_botDriver != null && _botDriver.IsBot)
+        {
+            ThrottleInput = _botDriver.ThrottleInput;
+            SteerInput    = _botDriver.SteerInput;
+        }
+        else
+        {
+            ThrottleInput = Input.GetAxis("Vertical");
+            SteerInput    = Input.GetAxis("Horizontal");
+        }
     }
 
     private void FixedUpdate()

@@ -8,5 +8,6 @@ public static class Keys
     public const string CURRENT_RACE_KEY = "curRace";  // int (0-based)
     public const string POINTS_KEY       = "pts";      // int[] indexed por actorNumber - 1
     public const string GRID_ACTORS_KEY  = "gridActors"; // int[] actorNumbers en orden oficial de grilla
+    public const string BOTS_COUNT_KEY   = "bots";      // int, cantidad de bots elegida por el host
     public const string NEXT_SCENE_KEY   = "nextScene"; // string scene name que Loading debe cargar
 }

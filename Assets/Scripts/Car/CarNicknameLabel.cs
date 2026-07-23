@@ -46,7 +46,7 @@ public class CarNicknameLabel : MonoBehaviour
         if (!PhotonNetwork.InRoom) return true;
 
         var pv = GetComponentInParent<PhotonView>();
-        return PhotonViewAuthority.HasLocalInputAuthority(pv);
+        return PhotonViewAuthority.IsLocalHumanRacer(pv);
     }
 
     private void TrySetName()

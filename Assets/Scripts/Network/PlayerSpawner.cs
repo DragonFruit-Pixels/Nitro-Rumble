@@ -20,6 +20,7 @@ public class PlayerSpawner : MonoBehaviourPunCallbacks
     private void Start()
     {
         SpawnLocalCar();
+        SpawnBotsIfMaster();
     }
 
     private void SpawnLocalCar()
@@ -49,6 +50,46 @@ public class PlayerSpawner : MonoBehaviourPunCallbacks
         if (SettingsManager.Instance != null && carGO.TryGetComponent(out Recorder recorder))
             SettingsManager.Instance.ApplyVoice(recorder);
     }
+
+// Solo lo ejecuta el Master Client (una vez, en su propia copia local de la escena) para
+    // no duplicar bots. Usa los spawn points que no ocupan los jugadores reales (el grid de
+    // jugadores ya fue armado en Keys.GRID_ACTORS_KEY antes de cargar esta escena).
+// Solo lo ejecuta el Master Client (una vez, en su propia copia local de la escena) para
+    // no duplicar bots. Usa los spawn points que no ocupan los jugadores reales (el grid de
+    // jugadores ya fue armado en Keys.GRID_ACTORS_KEY antes de cargar esta escena).
+    private void SpawnBotsIfMaster()
+    {
+        if (!PhotonNetwork.IsConnected || !PhotonNetwork.InRoom || !PhotonNetwork.IsMasterClient) return;
+        if (_spawnPoints == null || _spawnPoints.Length == 0) return;
+
+        var roomProps = PhotonNetwork.CurrentRoom.CustomProperties;
+
+        if (!roomProps.TryGetValue(Keys.BOTS_COUNT_KEY, out object botsObj) || !(botsObj is int botsCount) || botsCount <= 0)
+            return;
+
+        int realPlayers = roomProps.TryGetValue(Keys.GRID_ACTORS_KEY, out object gridObj) && gridObj is int[] gridActors
+            ? gridActors.Length
+            : PhotonNetwork.CurrentRoom.PlayerCount;
+
+        // Nunca mas bots de los que hay spawn points libres — si la sala esta llena de
+        // jugadores reales, no hay lugar fisico y no se spawnea ninguno (mejor eso que
+        // superponer un bot arriba de un jugador real).
+        int availableSlots = Mathf.Max(0, _spawnPoints.Length - realPlayers);
+        if (botsCount > availableSlots)
+        {
+            Logger.LogWarning($"[PlayerSpawner] Pedidos {botsCount} bots pero solo hay {availableSlots} spawn points libres ({realPlayers} jugadores reales de {_spawnPoints.Length}). Se acota.");
+            botsCount = availableSlots;
+        }
+
+        for (int i = 0; i < botsCount; i++)
+        {
+            int spawnIndex = (realPlayers + i) % _spawnPoints.Length;
+            Transform sp = _spawnPoints[spawnIndex];
+            int skinID = Racer.BotSkinIDs[i % Racer.BotSkinIDs.Length];
+            PhotonNetwork.Instantiate(_carPrefabName, sp.position, sp.rotation, 0, new object[] { true, i, skinID });
+        }
+    }
+
 
     private Transform GetSpawnPoint()
     {

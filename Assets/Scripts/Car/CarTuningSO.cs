@@ -13,7 +13,7 @@ public class CarTuningSO : ScriptableObject
     // ── Movimiento ───────────────────────────────────────────────────────────────
     [Header("Movimiento")]
     [Tooltip("Fuerza de aceleración (m/s²) con el acelerador a fondo y auto detenido. Se atenúa al acercarse a la velocidad máxima.")]
-    [SerializeField] private float _accelerationForce = 30f;
+    [SerializeField] private float _accelerationForce = 35f;
     [Tooltip("Velocidad máxima hacia adelante (m/s). El tope surge natural: la fuerza tiende a 0 al acercarse a este valor.")]
     [SerializeField] private float _maxSpeed = 20f;
     [Tooltip("Fuerza de frenado (m/s²) al apretar reversa mientras se avanza.")]
@@ -27,8 +27,8 @@ public class CarTuningSO : ScriptableObject
 
     // ── Dirección ────────────────────────────────────────────────────────────────
     [Header("Dirección")]
-    [Tooltip("Velocidad de giro máxima (rad/s) doblando a fondo y a máxima velocidad. 2.8 rad/s ≈ 160°/s.")]
-    [SerializeField] private float _maxTurnRate = 2.8f;
+    [Tooltip("Velocidad de giro máxima (rad/s) doblando a fondo y a máxima velocidad. 3.6 rad/s ≈ 206°/s.")]
+    [SerializeField] private float _maxTurnRate = 3.6f;
     [Tooltip("Qué tan rápido el giro alcanza su objetivo. Más bajo = arranque de giro más suave.")]
     [SerializeField] private float _steerResponse = 4f;
 
@@ -43,7 +43,7 @@ public class CarTuningSO : ScriptableObject
     [Tooltip("Distancia mínima de la cámara (a baja velocidad).")]
     [SerializeField] private float _minDistance = 7f;
     [Tooltip("Distancia máxima de la cámara (a alta velocidad). Subirlo aleja la cámara.")]
-    [SerializeField] private float _maxDistance = 11f;
+    [SerializeField] private float _maxDistance = 8.5f;
     [Tooltip("Velocidad de transición del zoom por velocidad.")]
     [SerializeField] private float _zoomSpeed = 2f;
     [Tooltip("Cuánto mira la cámara por delante del auto (m).")]

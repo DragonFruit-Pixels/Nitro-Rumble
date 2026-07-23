@@ -22,6 +22,9 @@ public class RaceManager : Singleton<RaceManager>, IOnEventCallback, IInRoomCall
     public int       TotalLaps      => _totalLaps;
     public RaceState State          { get; private set; } = RaceState.Waiting;
     public double    ExactStartTime { get; private set; }
+    // Cuantos jugadores humanos reales habia al arrancar — usado para no contaminar
+    // el registro de resultados con partidas solo-humano-vs-bots.
+    public int       RealPlayerCountAtStart { get; private set; }
 
     private int FinishLineIndex => _checkpoints.Length - 1;
 
@@ -74,7 +77,7 @@ public class RaceManager : Singleton<RaceManager>, IOnEventCallback, IInRoomCall
 
     #region Registration
 
-    public void RegisterRacer(Racer racer)
+public void RegisterRacer(Racer racer)
     {
         if (!_racers.Contains(racer))
             _racers.Add(racer);
@@ -83,9 +86,15 @@ public class RaceManager : Singleton<RaceManager>, IOnEventCallback, IInRoomCall
 
         racer.SetCanMove(false);
 
+        // Los bots no cuentan para "cuantos humanos hacen falta para arrancar" — se registran
+        // igual (deben existir antes del arranque) pero no inflan ni tapan el conteo real.
+        int humanRacers = 0;
+        foreach (var r in _racers)
+            if (!r.IsBot) humanRacers++;
+
         bool allReady = PhotonNetwork.IsConnected && PhotonNetwork.InRoom
-            ? _racers.Count >= GetActivePlayerCount()
-            : _racers.Count >= 1;
+            ? humanRacers >= GetActivePlayerCount()
+            : humanRacers >= 1;
 
         if (allReady)
         {
@@ -198,13 +207,17 @@ public class RaceManager : Singleton<RaceManager>, IOnEventCallback, IInRoomCall
         FireGo();
     }
 
-    private void FireGo()
+private void FireGo()
     {
         Logger.Log("[RaceManager] GO!");
 
         // Offline: ExactStartTime no se fijó en SyncedCountdown; usar el momento actual.
         if (!PhotonNetwork.IsConnected || !PhotonNetwork.InRoom)
             ExactStartTime = PhotonNetwork.Time;
+
+        // Snapshot de jugadores humanos reales al arrancar — usado después para no subir
+        // al registro de resultados una partida que fue solo-humano-vs-bots.
+        RealPlayerCountAtStart = GetActivePlayerCount();
 
         OnCountdown?.Invoke(0);
         State = RaceState.Racing;
@@ -271,8 +284,10 @@ public class RaceManager : Singleton<RaceManager>, IOnEventCallback, IInRoomCall
             // Notificar a todos los clientes que este auto terminó (deshabilita sus colisiones).
             racer.photonView.RPC(nameof(Racer.RPC_SetFinished), RpcTarget.All);
 
-            // Mostrar banner FINISH solo en la pantalla del jugador local.
-            OnLocalRacerFinished?.Invoke();
+            // Mostrar banner FINISH solo en la pantalla del jugador local — nunca para un bot
+            // (el Master Client es "dueno" del bot tambien, pero no es SU auto).
+            if (!racer.IsBot)
+                OnLocalRacerFinished?.Invoke();
 
             // TiempoFinal = PhotonNetwork.Time - exactStartTime (reloj universal, sin depender de FPS)
             double raceTime = PhotonNetwork.Time - ExactStartTime;
@@ -296,7 +311,8 @@ public class RaceManager : Singleton<RaceManager>, IOnEventCallback, IInRoomCall
         else
         {
             racer.RPC_SetFinished(); // offline: llamada directa, no hay red
-            OnLocalRacerFinished?.Invoke();
+            if (!racer.IsBot)
+                OnLocalRacerFinished?.Invoke();
             State = RaceState.Finished;
             racer.SetCanMove(false);
             Logger.Log($"[RaceManager] {racer.name} GANÓ (offline) en {racer.RaceTime:F2}s");
@@ -462,7 +478,7 @@ public class RaceManager : Singleton<RaceManager>, IOnEventCallback, IInRoomCall
         Racer localRacer = null;
         foreach (var r in _racers)
         {
-            bool isLocal = PhotonViewAuthority.HasLocalInputAuthority(r.photonView);
+            bool isLocal = PhotonViewAuthority.IsLocalHumanRacer(r.photonView);
             if (isLocal) { localRacer = r; break; }
         }
 
@@ -553,7 +569,20 @@ public class RaceManager : Singleton<RaceManager>, IOnEventCallback, IInRoomCall
     // Métodos requeridos por IInRoomCallbacks que no necesitamos usar.
     public void OnRoomPropertiesUpdate(ExitGames.Client.Photon.Hashtable propertiesThatChanged) { }
     public void OnPlayerPropertiesUpdate(Player targetPlayer, ExitGames.Client.Photon.Hashtable changedProps) { }
-    public void OnMasterClientSwitched(Player newMasterClient) { }
+    public void OnMasterClientSwitched(Player newMasterClient)
+    {
+        // Si soy el nuevo MC, tomo el manejo de los bots (su PhotonView usa OwnershipTransfer
+        // = Takeover). El resto (CarController/CarNetworkSync/CarDriftBoost/CarStretchSquash)
+        // no necesita saber nada de esto: en cuanto la ownership pasa, HasLocalInputAuthority
+        // empieza a dar true aca y todo arranca solo en esta maquina.
+        if (!PhotonNetwork.LocalPlayer.Equals(newMasterClient)) return;
+
+        foreach (var racer in _racers)
+        {
+            if (racer != null && racer.IsBot && racer.photonView != null)
+                racer.photonView.TransferOwnership(newMasterClient);
+        }
+    }
 
     private static int GetActivePlayerCount()
     {

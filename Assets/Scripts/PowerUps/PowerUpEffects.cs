@@ -11,6 +11,7 @@ public class PowerUpEffects : MonoBehaviourPun
     [SerializeField] private PowerUpVisuals _visuals;
     [SerializeField] private GameObject _empProjectilePrefab;
     [SerializeField] private CarCamera _carCamera;
+    [SerializeField] private AudioSource _sfxSource;
 
     [Header("Camera Shake")]
     [SerializeField] private float _empShakeIntensity   = 1.4f;
@@ -70,6 +71,9 @@ public class PowerUpEffects : MonoBehaviourPun
 
         if (_carCamera == null)
             _carCamera = FindObjectOfType<CarCamera>();
+
+        if (_sfxSource == null)
+            _sfxSource = GetComponent<AudioSource>();
     }
 
     public bool TryUsePowerUp(PowerUpType powerUp)
@@ -154,7 +158,7 @@ public class PowerUpEffects : MonoBehaviourPun
             RPC_ActivateTurbo(_turboDuration, _turboAcceleration);
     }
 
-    [PunRPC]
+[PunRPC]
     private void RPC_SetShield(bool active, float duration)
     {
         ResolveReferences();
@@ -168,14 +172,17 @@ public class PowerUpEffects : MonoBehaviourPun
 
         if (active)
         {
+            GameSFX.Instance?.shieldActivate.Play(_sfxSource);
             _shieldActivatedTimestamp = PhotonNetwork.ServerTimestamp;
             _shieldRoutine = StartCoroutine(ShieldRoutine(duration));
         }
     }
 
-    [PunRPC]
+[PunRPC]
     private void RPC_ConsumeShield(int attackerActor, int attackerViewId)
     {
+        ResolveReferences();
+
         if (_shieldRoutine != null)
         {
             StopCoroutine(_shieldRoutine);
@@ -185,9 +192,11 @@ public class PowerUpEffects : MonoBehaviourPun
         _shieldActive = false;
         if (_visuals != null)
             _visuals.SetShieldVisible(false);
+
+        GameSFX.Instance?.shieldBlock.Play(_sfxSource);
     }
 
-    [PunRPC]
+[PunRPC]
     private void RPC_SpawnEmpProjectile(Vector3 spawnPosition, Vector3 direction, int attackerActor, int attackerViewId)
     {
         if (_empProjectilePrefab == null)
@@ -199,6 +208,12 @@ public class PowerUpEffects : MonoBehaviourPun
             PhotonView attackerView = PhotonView.Find(attackerViewId);
             if (attackerView != null)
                 owner = attackerView.GetComponent<PowerUpEffects>();
+        }
+
+        if (owner != null)
+        {
+            owner.ResolveReferences();
+            GameSFX.Instance?.empFire.Play(owner._sfxSource);
         }
 
         GameObject projectileObject = Instantiate(_empProjectilePrefab);
@@ -219,9 +234,12 @@ public class PowerUpEffects : MonoBehaviourPun
         }
     }
 
-    [PunRPC]
+[PunRPC]
     private void RPC_ApplyEmp(int attackerActor, int attackerViewId, float duration)
     {
+        ResolveReferences();
+        GameSFX.Instance?.empHit.Play(_sfxSource);
+
         if (!IsLocalAuthority)
             return;
 
@@ -231,12 +249,14 @@ public class PowerUpEffects : MonoBehaviourPun
         _empRoutine = StartCoroutine(EmpRoutine(duration));
     }
 
-    [PunRPC]
+[PunRPC]
     private void RPC_ActivateTurbo(float duration, float acceleration)
     {
         ResolveReferences();
         if (_visuals != null)
             _visuals.PlayTurbo(duration);
+
+        GameSFX.Instance?.turboActivate.Play(_sfxSource);
 
         if (!IsLocalAuthority)
             return;

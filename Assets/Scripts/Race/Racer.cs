@@ -14,11 +14,26 @@ public class Racer : MonoBehaviourPun
     public int    Position       { get; set; }         = 0;
     public double FinishTime     { get; set; }         = 0.0;
     public bool   IsFinished     { get; private set; } = false;
+    public bool   IsBot          { get; private set; } = false;
+    public int    BotIndex      { get; private set; } = 0;
+
+    // Nombres fijos para los bots (maximo 3, ver RoomConfigPanel.ChangeBots). El mismo indice
+    // se usa en la sala (InRoomHandler) y en la carrera (aca), asi que el bot que se ve como
+    // "Bot Rayo" en el lobby es el mismo que corre como "Bot Rayo" en pista.
+    public static readonly string[] BotNames = { "Bot Rayo", "Bot Trueno", "Bot Centella" };
+
+    // Skin fija por bot (indices de CarSkinCatalogueSO: 0=Yellow, 1=Green, 2=Red, 3=Purple).
+    // Se deja Yellow libre para no pisar visualmente al humano que nunca cambió su skin default.
+    public static readonly int[] BotSkinIDs = { 3, 2, 1 };
 
     public string PlayerName
     {
         get
         {
+            // El bot no tiene Player propio: su Owner es quien lo maneja (el Master Client),
+            // asi que photonView.Owner.NickName mostraria el nombre del humano, no del bot.
+            if (IsBot) return BotNames[BotIndex % BotNames.Length];
+
             if (photonView != null && photonView.Owner != null && !string.IsNullOrEmpty(photonView.Owner.NickName))
                 return photonView.Owner.NickName;
             return gameObject.name;
@@ -31,9 +46,17 @@ public class Racer : MonoBehaviourPun
     private CarController _controller;
     private bool _racing = false;
 
-    private void Awake()
+private void Awake()
     {
         _controller = GetComponent<CarController>();
+
+        // Instantiation data: [0] = esBot (bool), [1] = indice del bot (int, para BotNames).
+        // Viaja pegado a la creacion en red, asi que es identico en todos los clientes y no
+        // depende de quien sea el dueno actual (sobrevive a un cambio de Master Client).
+        object[] data = photonView != null ? photonView.InstantiationData : null;
+        IsBot = data != null && data.Length > 0 && data[0] is bool isBot && isBot;
+        if (IsBot && data.Length > 1 && data[1] is int botIndex)
+            BotIndex = botIndex;
     }
 
     private void Start()

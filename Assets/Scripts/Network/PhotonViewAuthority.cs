@@ -15,4 +15,17 @@ public static class PhotonViewAuthority
             && !view.Owner.IsInactive
             && view.OwnerActorNr == PhotonNetwork.LocalPlayer.ActorNumber;
     }
+
+// Como HasLocalInputAuthority, pero excluye bots: usar donde la pregunta es
+    // "cual auto/HUD soy YO, el humano" (nametag, minimap, HUD, leaderboard) en vez
+    // de "tengo autoridad de fisica/red sobre esto" (para eso sigue sirviendo el de arriba).
+    // Necesario porque el Master Client puede ser dueno de su propio auto Y de un bot a la vez.
+    public static bool IsLocalHumanRacer(PhotonView view)
+    {
+        if (!HasLocalInputAuthority(view)) return false;
+
+        var racer = view != null ? view.GetComponent<Racer>() : null;
+        return racer == null || !racer.IsBot;
+    }
+
 }
