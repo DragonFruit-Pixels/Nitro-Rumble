@@ -37,7 +37,7 @@ public class RaceManager : Singleton<RaceManager>, IOnEventCallback, IInRoomCall
     public int FinishLineIndex => _checkpoints.Length - 1;
 
     private const byte EVENT_RACE_START    = 1;
-    private const byte EVENT_REPORT_FINISH = 2; // cliente → MC: crucé la meta
+    private const byte EVENT_REPORT_FINISH = 2; // dueño del auto → todos: crucé la meta
     private const byte EVENT_PODIUM        = 3; // MC → todos: podio oficial
     private const byte EVENT_COUNTDOWN     = 4; // MC → todos: alguien terminó, arranca el countdown
 
@@ -61,7 +61,8 @@ public class RaceManager : Singleton<RaceManager>, IOnEventCallback, IInRoomCall
     // recalcularlo en cada comparación del Sort.
     private readonly Dictionary<Racer, float> _progressCache = new();
 
-    // El MC acumula los reportes de meta y los ordena por ServerTimestamp.
+    // Todos los clientes acumulan los reportes de meta (así el podio sobrevive un cambio de
+    // Master Client); el MC es el único que los ordena por ServerTimestamp y emite el podio.
     private struct FinishRecord
     {
         public int    racerViewId;
@@ -356,7 +357,7 @@ private void FireGo()
                 new RaiseEventOptions { Receivers = ReceiverGroup.All },
                 SendOptions.SendReliable
             );
-            Logger.Log($"[RaceManager] {racer.name} reportó finish al MC — raceTime: {raceTime:F2}s");
+            Logger.Log($"[RaceManager] {racer.name} reportó finish — raceTime: {raceTime:F2}s");
         }
         else
         {
