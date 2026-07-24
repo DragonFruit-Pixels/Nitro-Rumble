@@ -728,9 +728,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _totalLaps: 3
   _countdownDuration: 3
-  _podiumTimeout: 120
+  _raceHardTimeout: 300
   _racerWaitTimeout: 30
   _aloneGracePeriod: 12
+  _maxSkippedCheckpoints: 2
+  _positionUpdateInterval: 0.2
   _checkpoints:
   - {fileID: 818795104}
   - {fileID: 1504245928}

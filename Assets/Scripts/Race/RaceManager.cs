@@ -11,9 +11,17 @@ public class RaceManager : Singleton<RaceManager>, IOnEventCallback, IInRoomCall
     [Header("Race Settings")]
     [SerializeField] private int   _totalLaps          = 3;
     [SerializeField] private float _countdownDuration  = 3f;
-    [SerializeField] private float _podiumTimeout      = 120f;
+    [SerializeField] private float _raceHardTimeout    = 300f; // s máx de carrera antes de forzar el podio pase lo que pase
     [SerializeField] private float _racerWaitTimeout   = 30f; // s máx esperando autos antes de arrancar igual
     [SerializeField] private float _aloneGracePeriod   = 12f; // s esperando reconexión antes de volver al lobby
+
+    [Tooltip("Cuántos checkpoints seguidos se toleran salteados antes de descartar el paso. " +
+             "Evita que perder un gate congele el progreso del auto para el resto de la carrera.")]
+    [SerializeField] private int   _maxSkippedCheckpoints = 2;
+
+    [Tooltip("Cada cuánto se recalculan las posiciones mientras se corre (s). Sin esto la " +
+             "posición solo cambiaría al cruzar un checkpoint, no al pasar a un rival.")]
+    [SerializeField] private float _positionUpdateInterval = 0.2f;
 
     [Header("Track")]
     [Tooltip("Arrastrar los checkpoints en orden. El último es la meta.")]
@@ -26,10 +34,10 @@ public class RaceManager : Singleton<RaceManager>, IOnEventCallback, IInRoomCall
     // el registro de resultados con partidas solo-humano-vs-bots.
     public int       RealPlayerCountAtStart { get; private set; }
 
-    private int FinishLineIndex => _checkpoints.Length - 1;
+    public int FinishLineIndex => _checkpoints.Length - 1;
 
     private const byte EVENT_RACE_START    = 1;
-    private const byte EVENT_REPORT_FINISH = 2; // cliente → MC: crucé la meta
+    private const byte EVENT_REPORT_FINISH = 2; // dueño del auto → todos: crucé la meta
     private const byte EVENT_PODIUM        = 3; // MC → todos: podio oficial
     private const byte EVENT_COUNTDOWN     = 4; // MC → todos: alguien terminó, arranca el countdown
 
@@ -46,8 +54,15 @@ public class RaceManager : Singleton<RaceManager>, IOnEventCallback, IInRoomCall
     private readonly List<Racer> _racers = new();
     private Coroutine _racerWaitTimeoutRoutine;
     private Coroutine _aloneRoutine;
+    private Coroutine _positionRoutine;
+    private Coroutine _hardTimeoutRoutine;
 
-    // El MC acumula los reportes de meta y los ordena por ServerTimestamp.
+    // Progreso calculado una vez por UpdatePositions y reusado por el comparador, en lugar de
+    // recalcularlo en cada comparación del Sort.
+    private readonly Dictionary<Racer, float> _progressCache = new();
+
+    // Todos los clientes acumulan los reportes de meta (así el podio sobrevive un cambio de
+    // Master Client); el MC es el único que los ordena por ServerTimestamp y emite el podio.
     private struct FinishRecord
     {
         public int    racerViewId;
@@ -225,6 +240,26 @@ private void FireGo()
             racer.SetCanMove(true);
         UpdatePositions();
         OnRaceStart?.Invoke();
+
+        if (_positionRoutine != null) StopCoroutine(_positionRoutine);
+        _positionRoutine = StartCoroutine(PositionUpdateRoutine());
+
+        // Red de seguridad: si nadie llega a cruzar la meta (auto trabado, checkpoint perdido,
+        // jugador AFK), la partida igual cierra en vez de quedar colgada para siempre.
+        if (PhotonNetwork.IsConnected && PhotonNetwork.InRoom && PhotonNetwork.IsMasterClient
+            && _hardTimeoutRoutine == null)
+            _hardTimeoutRoutine = StartCoroutine(RaceHardTimeoutRoutine());
+    }
+
+    private IEnumerator RaceHardTimeoutRoutine()
+    {
+        yield return new WaitForSeconds(_raceHardTimeout);
+        _hardTimeoutRoutine = null;
+
+        if (State == RaceState.Finished) yield break;
+
+        Logger.LogWarning($"[RaceManager MC] Timeout duro de carrera ({_raceHardTimeout:F0}s) — cerrando la partida con los resultados que haya.");
+        BroadcastPodium();
     }
 
     #endregion
@@ -248,22 +283,35 @@ private void FireGo()
         }
         else
         {
-            if (index != racer.LastCheckpoint + 1)
+            // Se tolera perder algún gate (línea rara, respawn, empujón). Antes cualquier salto
+            // se descartaba en silencio y el racer quedaba congelado en su último checkpoint
+            // para el resto de la carrera: ni avanzaba de posición ni podía completar vuelta.
+            int expected = racer.LastCheckpoint + 1;
+            int skipped  = index - expected;
+
+            if (skipped < 0 || skipped > _maxSkippedCheckpoints)
             {
-                Logger.Log($"[RaceManager] {racer.name} pisó checkpoint {index} fuera de orden (esperado: {racer.LastCheckpoint + 1}) — ignorado");
+                Logger.Log($"[RaceManager] {racer.name} pisó checkpoint {index} fuera de orden (esperado: {expected}) — ignorado");
                 return;
             }
+
             racer.AdvanceCheckpoint(index);
-            Logger.Log($"[RaceManager] {racer.name} ✓ checkpoint {index}/{FinishLineIndex - 1}");
+
+            if (skipped > 0)
+                Logger.LogWarning($"[RaceManager] {racer.name} salteó {skipped} checkpoint(s) — se cuenta el {index} igual (esperado: {expected})");
+            else
+                Logger.Log($"[RaceManager] {racer.name} ✓ checkpoint {index}/{FinishLineIndex - 1}");
+
             UpdatePositions();
         }
     }
 
     private void HandleFinishLine(Racer racer)
     {
-        if (racer.LastCheckpoint < FinishLineIndex - 1)
+        int minCheckpoint = FinishLineIndex - 1 - _maxSkippedCheckpoints;
+        if (racer.LastCheckpoint < minCheckpoint)
         {
-            Logger.Log($"[RaceManager] {racer.name} cruzó la meta sin completar los checkpoints — ignorado");
+            Logger.Log($"[RaceManager] {racer.name} cruzó la meta sin completar los checkpoints (último: {racer.LastCheckpoint}, mínimo: {minCheckpoint}) — ignorado");
             return;
         }
 
@@ -300,13 +348,16 @@ private void FireGo()
                 (float)raceTime,
                 PhotonNetwork.ServerTimestamp
             );
+            // A todos, no solo al MC: cada cliente acumula la misma lista de finishes, así
+            // el que quede como MC nuevo si el actual se va ya tiene el historial completo
+            // y puede cerrar el podio con los tiempos reales en vez de marcar todos DNF.
             PhotonNetwork.RaiseEvent(
                 EVENT_REPORT_FINISH,
                 result,
-                new RaiseEventOptions { Receivers = ReceiverGroup.MasterClient },
+                new RaiseEventOptions { Receivers = ReceiverGroup.All },
                 SendOptions.SendReliable
             );
-            Logger.Log($"[RaceManager] {racer.name} reportó finish al MC — raceTime: {raceTime:F2}s");
+            Logger.Log($"[RaceManager] {racer.name} reportó finish — raceTime: {raceTime:F2}s");
         }
         else
         {
@@ -322,12 +373,14 @@ private void FireGo()
 
     #endregion
 
-    #region Podio — Master Client
+    #region Podio
 
-    // Solo el MC procesa este evento. Acumula finishes y emite el podio cuando todos terminaron.
+    // Lo reciben TODOS los clientes y todos acumulan la misma lista (ver el RaiseEvent en
+    // HandleFinishLine). Solo el MC decide sobre ella: emitir el podio y manejar los timeouts.
+    // Tener la lista replicada es lo que permite que un MC nuevo retome donde quedó el anterior.
     private void HandleFinishReport(RaceResultPackage result)
     {
-        if (!PhotonNetwork.IsMasterClient) return;
+        PruneDestroyedRacers();
 
         int    racerViewId     = result.RacerViewId;
         int    serverTimestamp = result.ServerTimestamp;
@@ -344,17 +397,17 @@ private void FireGo()
             raceTime        = raceTime
         });
 
-        Logger.Log($"[RaceManager MC] Finish registrado: viewId={racerViewId}, time={raceTime:F2}s ({_finishRecords.Count}/{_racers.Count})");
+        Logger.Log($"[RaceManager] Finish registrado: viewId={racerViewId}, time={raceTime:F2}s ({_finishRecords.Count}/{_racers.Count})");
 
-        // Si es el primer finisher, calcular timeout dinámico basado en su tiempo promedio
-        // por vuelta y arrancar la cuenta regresiva para los que aún no terminaron.
+        if (!PhotonNetwork.IsMasterClient) return;
+
+        // Si es el primer finisher, arrancar la cuenta regresiva para los que aún no terminaron
+        // y notificar a todos para que la muestren en el HUD.
         if (_finishRecords.Count == 1 && _podiumTimeoutRoutine == null)
         {
-            float avgLapTime     = (float)(raceTime / _totalLaps);
-            float dynamicTimeout = Mathf.Max(30f, avgLapTime * 1.5f);
-            Logger.Log($"[RaceManager MC] Timeout dinámico: {dynamicTimeout:F1}s (avgLap={avgLapTime:F1}s)");
+            float dynamicTimeout = ComputePodiumTimeout();
+            Logger.Log($"[RaceManager MC] Timeout dinámico: {dynamicTimeout:F1}s");
 
-            // Notificar a todos para que muestren el countdown en el HUD.
             string finisherName = PhotonView.Find(racerViewId)?.GetComponent<Racer>()?.PlayerName ?? LocalizationManager.Get("race.unknownPlayer");
             object[] cdPayload = { finisherName, dynamicTimeout };
             PhotonNetwork.RaiseEvent(
@@ -369,6 +422,15 @@ private void FireGo()
 
         if (_finishRecords.Count >= _racers.Count)
             BroadcastPodium();
+    }
+
+    // Margen que se les da a los rezagados una vez que alguien cruzó la meta: vuelta promedio
+    // del primero por 1.5, con un piso de 30 s.
+    private float ComputePodiumTimeout()
+    {
+        if (_finishRecords.Count == 0) return 30f;
+        float avgLapTime = (float)(_finishRecords[0].raceTime / Mathf.Max(1, _totalLaps));
+        return Mathf.Max(30f, avgLapTime * 1.5f);
     }
 
     private IEnumerator PodiumTimeoutRoutine(float timeout)
@@ -390,6 +452,12 @@ private void FireGo()
         {
             StopCoroutine(_podiumTimeoutRoutine);
             _podiumTimeoutRoutine = null;
+        }
+
+        if (_hardTimeoutRoutine != null)
+        {
+            StopCoroutine(_hardTimeoutRoutine);
+            _hardTimeoutRoutine = null;
         }
 
         // Ordenar por ServerTimestamp: resta unchecked maneja el wrap-around del int (~24 días).
@@ -423,6 +491,8 @@ private void FireGo()
 
         State = RaceState.Finished;
 
+        PruneDestroyedRacers();
+
         // Asignar posiciones a los que terminaron (orden del podio).
         var finishedSet = new HashSet<Racer>();
         Racer winner = null;
@@ -442,20 +512,28 @@ private void FireGo()
             if (i == 0) winner = racer;
         }
 
-        // Asignar posiciones a los DNF en el orden de progreso que tenían al final.
-        int dnfPosition = orderedViewIds.Length + 1;
+        // Asignar posiciones a los DNF por el progreso real que tenían al final.
+        var dnfRacers = new List<Racer>();
         foreach (var racer in _racers)
+            if (!finishedSet.Contains(racer)) dnfRacers.Add(racer);
+
+        dnfRacers.Sort((a, b) => GetProgress(b).CompareTo(GetProgress(a)));
+
+        int dnfPosition = orderedViewIds.Length + 1;
+        foreach (var racer in dnfRacers)
         {
-            if (!finishedSet.Contains(racer))
-            {
-                racer.Position   = dnfPosition++;
-                racer.FinishTime = 0;
-                racer.SetCanMove(false);
-            }
+            racer.Position   = dnfPosition++;
+            racer.FinishTime = 0;
+            racer.SetCanMove(false);
         }
 
         // Ordenar _racers por posición final para que GetRacers() devuelva el podio en orden.
         _racers.Sort((a, b) => a.Position.CompareTo(b.Position));
+
+        // Podio vacío (timeout duro sin ningún finisher): el "ganador" es el que más lejos
+        // llegó. Sin esto el evento no se emitía y la partida quedaba sin cerrar en la UI.
+        if (winner == null && _racers.Count > 0)
+            winner = _racers[0];
 
         // Guardar récord local del jugador en este cliente.
         // LocalSaveManager.Instance puede ser null si el GameObject no está en escena todavía.
@@ -496,25 +574,83 @@ private void FireGo()
 
     #region Positions
 
+    // Recalcula posiciones a intervalo fijo mientras se corre. Sin esto la posición solo
+    // cambiaba al pisar un checkpoint: pasabas al rival en la recta y el HUD no se enteraba
+    // hasta el próximo gate.
+    private IEnumerator PositionUpdateRoutine()
+    {
+        var wait = new WaitForSeconds(Mathf.Max(0.05f, _positionUpdateInterval));
+        while (State == RaceState.Racing)
+        {
+            UpdatePositions();
+            yield return wait;
+        }
+        _positionRoutine = null;
+    }
+
+    // Progreso continuo: vuelta + último checkpoint + fracción recorrida hacia el siguiente.
+    // La parte fraccionaria es lo que permite ordenar dos autos que están entre los mismos
+    // gates; con la clave entera vieja empataban y el orden lo decidía el azar del Sort.
+    private float GetProgress(Racer racer)
+    {
+        int   total    = _checkpoints.Length;
+        float discrete = racer.CurrentLap * total + racer.LastCheckpoint;
+
+        // Con LastCheckpoint == -1 (recién largó o recién cruzó la meta) el tramo actual es
+        // el que va de la meta al primer checkpoint.
+        Transform from = GetCheckpointTransform(racer.LastCheckpoint >= 0 ? racer.LastCheckpoint : FinishLineIndex);
+        Transform to   = GetCheckpointTransform(racer.LastCheckpoint + 1);
+        if (from == null || to == null) return discrete;
+
+        Vector3 segment   = to.position - from.position;
+        float   sqrLength = segment.sqrMagnitude;
+        if (sqrLength < 0.01f) return discrete;
+
+        float t = Mathf.Clamp01(Vector3.Dot(racer.WorldPosition - from.position, segment) / sqrLength);
+        return discrete + t;
+    }
+
     private void UpdatePositions()
     {
-        int total = _checkpoints.Length;
+        if (_checkpoints == null || _checkpoints.Length == 0) return;
+
+        PruneDestroyedRacers();
+
+        _progressCache.Clear();
+        foreach (var racer in _racers)
+            _progressCache[racer] = GetProgress(racer);
+
         _racers.Sort((a, b) =>
         {
-            int progressA = a.CurrentLap * total + a.LastCheckpoint;
-            int progressB = b.CurrentLap * total + b.LastCheckpoint;
-            if (progressB != progressA) return progressB.CompareTo(progressA);
-            return a.RaceTime.CompareTo(b.RaceTime);
+            int byProgress = _progressCache[b].CompareTo(_progressCache[a]);
+            if (byProgress != 0) return byProgress;
+            // Desempate determinístico: List.Sort es inestable, así que sin esto dos autos
+            // empatados se intercambian de posición al azar y el HUD parpadea.
+            return GetRacerId(a).CompareTo(GetRacerId(b));
         });
 
+        bool changed = false;
         for (int i = 0; i < _racers.Count; i++)
         {
+            if (_racers[i].Position != i + 1) changed = true;
             _racers[i].Position = i + 1;
-            Logger.Log($"[RaceManager] P{i + 1}: {_racers[i].name} (vuelta {_racers[i].CurrentLap}, checkpoint {_racers[i].LastCheckpoint})");
         }
+
+        // Solo logueamos cuando el orden cambió: esto corre 5 veces por segundo.
+        if (changed)
+            foreach (var racer in _racers)
+                Logger.Log($"[RaceManager] P{racer.Position}: {racer.name} (vuelta {racer.CurrentLap}, checkpoint {racer.LastCheckpoint})");
 
         OnPositionsUpdated?.Invoke();
     }
+
+    private static int GetRacerId(Racer racer) =>
+        racer.photonView != null ? racer.photonView.ViewID : racer.GetInstanceID();
+
+    // Un jugador que se va deja su auto destruido, pero su entrada sigue en la lista. Hay que
+    // sacarla antes de recorrerla: cualquier acceso tira MissingReferenceException, y además
+    // un fantasma inflaba _racers.Count y hacía que el podio esperara a alguien que ya no está.
+    private void PruneDestroyedRacers() => _racers.RemoveAll(racer => racer == null);
 
     public IReadOnlyList<Racer> GetRacers() => _racers;
 
@@ -582,6 +718,32 @@ private void FireGo()
             if (racer != null && racer.IsBot && racer.photonView != null)
                 racer.photonView.TransferOwnership(newMasterClient);
         }
+
+        if (State != RaceState.Racing) return;
+
+        PruneDestroyedRacers();
+
+        // Los timeouts viven solo en el MC: si el anterior se fue, la red de seguridad se iba
+        // con él y la carrera quedaba colgada. Arrancan de cero (no sabemos cuánto llevaban
+        // corriendo allá), pero son backstops, no plazos exactos.
+        if (_hardTimeoutRoutine == null)
+            _hardTimeoutRoutine = StartCoroutine(RaceHardTimeoutRoutine());
+
+        if (_finishRecords.Count == 0) return;
+
+        // _finishRecords viaja a todos los clientes, así que acá ya está completo. Si el MC
+        // anterior se fue justo antes de emitir el podio, lo cerramos nosotros con los tiempos
+        // reales; si todavía faltan autos, retomamos la cuenta regresiva.
+        Logger.Log($"[RaceManager] Soy el MC nuevo — retomando el podio con {_finishRecords.Count}/{_racers.Count} finishes.");
+
+        if (_finishRecords.Count >= _racers.Count)
+        {
+            BroadcastPodium();
+            return;
+        }
+
+        if (_podiumTimeoutRoutine == null)
+            _podiumTimeoutRoutine = StartCoroutine(PodiumTimeoutRoutine(ComputePodiumTimeout()));
     }
 
     private static int GetActivePlayerCount()

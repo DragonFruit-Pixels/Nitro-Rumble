@@ -14,19 +14,33 @@ public class HUDPositionPanel : MonoBehaviour
 
     private void Update()
     {
-        if (_localRacer == null)
+        // También entra acá si el panel se reactivó: OnDisable saca los handlers.
+        if (_localRacer == null || !_subscribed)
             TryFindRacer();
+    }
+
+    private void OnDisable()
+    {
+        if (_subscribed && RaceManager.Instance != null)
+        {
+            RaceManager.Instance.OnPositionsUpdated -= Refresh;
+            RaceManager.Instance.OnRaceStart        -= Refresh;
+        }
+        _subscribed = false;
     }
 
     private void TryFindRacer()
     {
-        foreach (Racer r in FindObjectsOfType<Racer>())
+        if (_localRacer == null)
         {
-            var pv = r.GetComponent<Photon.Pun.PhotonView>();
-            if (PhotonViewAuthority.IsLocalHumanRacer(pv))
+            foreach (Racer r in FindObjectsOfType<Racer>())
             {
-                _localRacer = r;
-                break;
+                var pv = r.GetComponent<Photon.Pun.PhotonView>();
+                if (PhotonViewAuthority.IsLocalHumanRacer(pv))
+                {
+                    _localRacer = r;
+                    break;
+                }
             }
         }
 

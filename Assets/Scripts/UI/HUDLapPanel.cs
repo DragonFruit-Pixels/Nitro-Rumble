@@ -13,19 +13,34 @@ public class HUDLapPanel : MonoBehaviour
 
     private void Update()
     {
-        if (_localRacer == null)
+        // También entra acá si el panel se reactivó: OnDisable saca los handlers.
+        if (_localRacer == null || !_subscribed)
             TryFindRacer();
+    }
+
+    private void OnDisable()
+    {
+        if (_subscribed && RaceManager.Instance != null)
+        {
+            RaceManager.Instance.OnLapCompleted     -= HandleLapCompleted;
+            RaceManager.Instance.OnPositionsUpdated -= Refresh;
+            RaceManager.Instance.OnRaceStart        -= Refresh;
+        }
+        _subscribed = false;
     }
 
     private void TryFindRacer()
     {
-        foreach (Racer r in FindObjectsOfType<Racer>())
+        if (_localRacer == null)
         {
-            var pv = r.GetComponent<Photon.Pun.PhotonView>();
-            if (PhotonViewAuthority.IsLocalHumanRacer(pv))
+            foreach (Racer r in FindObjectsOfType<Racer>())
             {
-                _localRacer = r;
-                break;
+                var pv = r.GetComponent<Photon.Pun.PhotonView>();
+                if (PhotonViewAuthority.IsLocalHumanRacer(pv))
+                {
+                    _localRacer = r;
+                    break;
+                }
             }
         }
 
@@ -33,7 +48,9 @@ public class HUDLapPanel : MonoBehaviour
 
         if (!_subscribed && RaceManager.Instance != null)
         {
-            RaceManager.Instance.OnLapCompleted     += _ => Refresh();
+            // Handler con nombre en vez de lambda: a un lambda no se le puede hacer -=
+            // (cada uno es una instancia distinta), así que quedaría enganchado para siempre.
+            RaceManager.Instance.OnLapCompleted     += HandleLapCompleted;
             RaceManager.Instance.OnPositionsUpdated += Refresh;
             RaceManager.Instance.OnRaceStart        += Refresh;
             _subscribed = true;
@@ -41,6 +58,8 @@ public class HUDLapPanel : MonoBehaviour
 
         Refresh();
     }
+
+    private void HandleLapCompleted(Racer _) => Refresh();
 
     private void Refresh()
     {

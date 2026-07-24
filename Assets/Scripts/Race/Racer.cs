@@ -40,6 +40,13 @@ public class Racer : MonoBehaviourPun
         }
     }
 
+    // Posición real del auto en pista. El root no se mueve: quien se desplaza es la sphere
+    // de física (ver CarController). Lo usa RaceManager para calcular progreso continuo.
+    public Vector3 WorldPosition =>
+        _controller != null && _controller.PhysicsBody != null
+            ? _controller.PhysicsBody.position
+            : transform.position;
+
     // True si es el jugador local o si no hay Photon activo (offline/testing).
     private bool IsLocal => PhotonViewAuthority.HasLocalInputAuthority(photonView);
 
