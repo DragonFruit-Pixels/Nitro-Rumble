@@ -376,6 +376,8 @@ private void FireGo()
     {
         if (!PhotonNetwork.IsMasterClient) return;
 
+        PruneDestroyedRacers();
+
         int    racerViewId     = result.RacerViewId;
         int    serverTimestamp = result.ServerTimestamp;
         double raceTime        = result.RaceTime;
@@ -475,6 +477,8 @@ private void FireGo()
         double[] raceTimes      = (double[])payload[1];
 
         State = RaceState.Finished;
+
+        PruneDestroyedRacers();
 
         // Asignar posiciones a los que terminaron (orden del podio).
         var finishedSet = new HashSet<Racer>();
@@ -597,9 +601,7 @@ private void FireGo()
     {
         if (_checkpoints == null || _checkpoints.Length == 0) return;
 
-        // Un jugador que se va deja su auto destruido. Esto ahora corre 5 veces por segundo,
-        // así que una referencia muerta sería spam de excepciones en vez de un error aislado.
-        _racers.RemoveAll(racer => racer == null);
+        PruneDestroyedRacers();
 
         _progressCache.Clear();
         foreach (var racer in _racers)
@@ -631,6 +633,11 @@ private void FireGo()
 
     private static int GetRacerId(Racer racer) =>
         racer.photonView != null ? racer.photonView.ViewID : racer.GetInstanceID();
+
+    // Un jugador que se va deja su auto destruido, pero su entrada sigue en la lista. Hay que
+    // sacarla antes de recorrerla: cualquier acceso tira MissingReferenceException, y además
+    // un fantasma inflaba _racers.Count y hacía que el podio esperara a alguien que ya no está.
+    private void PruneDestroyedRacers() => _racers.RemoveAll(racer => racer == null);
 
     public IReadOnlyList<Racer> GetRacers() => _racers;
 
@@ -698,6 +705,12 @@ private void FireGo()
             if (racer != null && racer.IsBot && racer.photonView != null)
                 racer.photonView.TransferOwnership(newMasterClient);
         }
+
+        // El timeout duro vive solo en el MC: si el MC anterior se fue, la red de seguridad
+        // se iba con él y la carrera podía quedar colgada. Arranca de cero (no sabemos cuánto
+        // llevaba corriendo el del otro), pero es un backstop, no un plazo exacto.
+        if (State == RaceState.Racing && _hardTimeoutRoutine == null)
+            _hardTimeoutRoutine = StartCoroutine(RaceHardTimeoutRoutine());
     }
 
     private static int GetActivePlayerCount()
