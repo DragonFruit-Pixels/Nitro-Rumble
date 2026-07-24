@@ -188,30 +188,41 @@ public class CarRamDestroy : MonoBehaviourPun
 
     #region Helpers
 
+    // Último checkpoint válido para reaparecer, o null si todavía no pasó ninguno.
+    // Con LastCheckpoint == -1 hay dos casos distintos: recién largó (va a la grilla) o
+    // acaba de cruzar la meta (va a la meta, no de vuelta a la grilla).
+    private Transform GetRespawnCheckpoint()
+    {
+        if (_racer == null || RaceManager.Instance == null) return null;
+
+        if (_racer.LastCheckpoint >= 0)
+            return RaceManager.Instance.GetCheckpointTransform(_racer.LastCheckpoint);
+
+        if (_racer.CurrentLap > 0)
+            return RaceManager.Instance.GetCheckpointTransform(RaceManager.Instance.FinishLineIndex);
+
+        return null;
+    }
+
     private Vector3 GetRespawnPosition()
     {
-        if (_racer != null && _racer.LastCheckpoint >= 0 && RaceManager.Instance != null)
-        {
-            Transform cp = RaceManager.Instance.GetCheckpointTransform(_racer.LastCheckpoint);
-            if (cp != null) return cp.position + Vector3.up * 0.5f;
-        }
+        Transform cp = GetRespawnCheckpoint();
+        if (cp != null) return cp.position + Vector3.up * 0.5f;
         return _spawnPosition;
     }
 
     private Quaternion GetRespawnRotation()
     {
-        if (_racer != null && _racer.LastCheckpoint >= 0 && RaceManager.Instance != null)
+        Transform cp = GetRespawnCheckpoint();
+        if (cp != null)
         {
-            Transform cp = RaceManager.Instance.GetCheckpointTransform(_racer.LastCheckpoint);
-            if (cp != null)
-            {
-                // Proyectar forward del checkpoint al plano horizontal para que el auto
-                // quede siempre derecho (sin inclinación), mirando en dirección de la pista
-                Vector3 flat = Vector3.ProjectOnPlane(cp.forward, Vector3.up);
-                if (flat.sqrMagnitude > 0.01f)
-                    return Quaternion.LookRotation(flat, Vector3.up);
-            }
+            // Proyectar forward del checkpoint al plano horizontal para que el auto
+            // quede siempre derecho (sin inclinación), mirando en dirección de la pista
+            Vector3 flat = Vector3.ProjectOnPlane(cp.forward, Vector3.up);
+            if (flat.sqrMagnitude > 0.01f)
+                return Quaternion.LookRotation(flat, Vector3.up);
         }
+
         // Fallback: misma rotación que al hacer spawn (horizontal, sin roll/pitch)
         Vector3 spawnFlat = Vector3.ProjectOnPlane(_spawnRotation * Vector3.forward, Vector3.up);
         return spawnFlat.sqrMagnitude > 0.01f
