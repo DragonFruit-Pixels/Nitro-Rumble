@@ -347,10 +347,13 @@ private void FireGo()
                 (float)raceTime,
                 PhotonNetwork.ServerTimestamp
             );
+            // A todos, no solo al MC: cada cliente acumula la misma lista de finishes, así
+            // el que quede como MC nuevo si el actual se va ya tiene el historial completo
+            // y puede cerrar el podio con los tiempos reales en vez de marcar todos DNF.
             PhotonNetwork.RaiseEvent(
                 EVENT_REPORT_FINISH,
                 result,
-                new RaiseEventOptions { Receivers = ReceiverGroup.MasterClient },
+                new RaiseEventOptions { Receivers = ReceiverGroup.All },
                 SendOptions.SendReliable
             );
             Logger.Log($"[RaceManager] {racer.name} reportó finish al MC — raceTime: {raceTime:F2}s");
@@ -369,13 +372,13 @@ private void FireGo()
 
     #endregion
 
-    #region Podio — Master Client
+    #region Podio
 
-    // Solo el MC procesa este evento. Acumula finishes y emite el podio cuando todos terminaron.
+    // Lo reciben TODOS los clientes y todos acumulan la misma lista (ver el RaiseEvent en
+    // HandleFinishLine). Solo el MC decide sobre ella: emitir el podio y manejar los timeouts.
+    // Tener la lista replicada es lo que permite que un MC nuevo retome donde quedó el anterior.
     private void HandleFinishReport(RaceResultPackage result)
     {
-        if (!PhotonNetwork.IsMasterClient) return;
-
         PruneDestroyedRacers();
 
         int    racerViewId     = result.RacerViewId;
@@ -393,17 +396,17 @@ private void FireGo()
             raceTime        = raceTime
         });
 
-        Logger.Log($"[RaceManager MC] Finish registrado: viewId={racerViewId}, time={raceTime:F2}s ({_finishRecords.Count}/{_racers.Count})");
+        Logger.Log($"[RaceManager] Finish registrado: viewId={racerViewId}, time={raceTime:F2}s ({_finishRecords.Count}/{_racers.Count})");
 
-        // Si es el primer finisher, calcular timeout dinámico basado en su tiempo promedio
-        // por vuelta y arrancar la cuenta regresiva para los que aún no terminaron.
+        if (!PhotonNetwork.IsMasterClient) return;
+
+        // Si es el primer finisher, arrancar la cuenta regresiva para los que aún no terminaron
+        // y notificar a todos para que la muestren en el HUD.
         if (_finishRecords.Count == 1 && _podiumTimeoutRoutine == null)
         {
-            float avgLapTime     = (float)(raceTime / _totalLaps);
-            float dynamicTimeout = Mathf.Max(30f, avgLapTime * 1.5f);
-            Logger.Log($"[RaceManager MC] Timeout dinámico: {dynamicTimeout:F1}s (avgLap={avgLapTime:F1}s)");
+            float dynamicTimeout = ComputePodiumTimeout();
+            Logger.Log($"[RaceManager MC] Timeout dinámico: {dynamicTimeout:F1}s");
 
-            // Notificar a todos para que muestren el countdown en el HUD.
             string finisherName = PhotonView.Find(racerViewId)?.GetComponent<Racer>()?.PlayerName ?? LocalizationManager.Get("race.unknownPlayer");
             object[] cdPayload = { finisherName, dynamicTimeout };
             PhotonNetwork.RaiseEvent(
@@ -418,6 +421,15 @@ private void FireGo()
 
         if (_finishRecords.Count >= _racers.Count)
             BroadcastPodium();
+    }
+
+    // Margen que se les da a los rezagados una vez que alguien cruzó la meta: vuelta promedio
+    // del primero por 1.5, con un piso de 30 s.
+    private float ComputePodiumTimeout()
+    {
+        if (_finishRecords.Count == 0) return 30f;
+        float avgLapTime = (float)(_finishRecords[0].raceTime / Mathf.Max(1, _totalLaps));
+        return Mathf.Max(30f, avgLapTime * 1.5f);
     }
 
     private IEnumerator PodiumTimeoutRoutine(float timeout)
@@ -706,11 +718,31 @@ private void FireGo()
                 racer.photonView.TransferOwnership(newMasterClient);
         }
 
-        // El timeout duro vive solo en el MC: si el MC anterior se fue, la red de seguridad
-        // se iba con él y la carrera podía quedar colgada. Arranca de cero (no sabemos cuánto
-        // llevaba corriendo el del otro), pero es un backstop, no un plazo exacto.
-        if (State == RaceState.Racing && _hardTimeoutRoutine == null)
+        if (State != RaceState.Racing) return;
+
+        PruneDestroyedRacers();
+
+        // Los timeouts viven solo en el MC: si el anterior se fue, la red de seguridad se iba
+        // con él y la carrera quedaba colgada. Arrancan de cero (no sabemos cuánto llevaban
+        // corriendo allá), pero son backstops, no plazos exactos.
+        if (_hardTimeoutRoutine == null)
             _hardTimeoutRoutine = StartCoroutine(RaceHardTimeoutRoutine());
+
+        if (_finishRecords.Count == 0) return;
+
+        // _finishRecords viaja a todos los clientes, así que acá ya está completo. Si el MC
+        // anterior se fue justo antes de emitir el podio, lo cerramos nosotros con los tiempos
+        // reales; si todavía faltan autos, retomamos la cuenta regresiva.
+        Logger.Log($"[RaceManager] Soy el MC nuevo — retomando el podio con {_finishRecords.Count}/{_racers.Count} finishes.");
+
+        if (_finishRecords.Count >= _racers.Count)
+        {
+            BroadcastPodium();
+            return;
+        }
+
+        if (_podiumTimeoutRoutine == null)
+            _podiumTimeoutRoutine = StartCoroutine(PodiumTimeoutRoutine(ComputePodiumTimeout()));
     }
 
     private static int GetActivePlayerCount()
